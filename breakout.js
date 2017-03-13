@@ -14,7 +14,8 @@ function drawCanvas() {
     c.fillStyle = "blue";
     c.lineWidth = 2;
 
-    c.arc(100, 100, 50, 1, Math.PI/2, true);
+    c.beginPath();
+    c.arc(100, 100, 50, 0, Math.PI/2, true);
     c.stroke();
 }
 
