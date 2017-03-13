@@ -1,3 +1,10 @@
 The following images are part of the Android Design Icon set:
 	images/full_screen.png
 	images/return_from_full_screen.png
+
+Danny's password: netgear-cs3500-wmu-candle
+
+$ git clone http://danny@shjohnson314.webfactional.com/git/cs3500.git
+Cloning into 'cs3500'...
+Username for 'https://shjohnson314.webfactional.com': danny
+Password for 'https://danny@shjohnson314.webfactional.com':
