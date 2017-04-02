@@ -1,5 +1,5 @@
 var BRICK_WIDTH = 50;
-var BRICK_HEIGHT = 25;
+var BRICK_HEIGHT = 20;
 
 var canvas = null;
 var c = null;
@@ -14,16 +14,16 @@ function Brick(x, y) {
     this.color = 'red';
 }
 
-Brick.prototype.draw = function(c) {
+Brick.prototype.draw = function (c) {
     c.beginPath();
     c.fillStyle = 'black';
     c.fillRect(this.x, this.y, this.width, this.height);
     c.fillStyle = this.color;
-    c.fillRect(this.x, this.y, this.width-1, this.height-1);
+    c.fillRect(this.x, this.y, this.width - 1, this.height - 1);
     c.stroke();
 };
 
-function Ball(x,y,vx,vy,r,c) {
+function Ball(x, y, vx, vy, r, c) {
     this.x = x;
     this.y = y;
     this.vx = vx;
@@ -32,12 +32,53 @@ function Ball(x,y,vx,vy,r,c) {
     this.color = c;
 }
 
-Ball.prototype.draw = function(c){
+Ball.prototype.draw = function (c) {
     c.beginPath();
-    c.arc(this.x,this.y,this.radius,0,2*Math.PI);
+    c.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
     c.fillStyle = this.color;
     c.fill();
 };
+
+//Handles ball collision
+function collision(ball) {
+    //Edge of scrren
+    if (ball.y > canvas.height - ball.radius || ball.y < ball.radius) {
+        ball.vy = -ball.vy;
+    }
+    if (ball.x > canvas.width - ball.radius || ball.x < ball.radius) {
+        ball.vx = -ball.vx;
+    }
+
+    //Bricks
+    var yreverse = false;
+    var xreverse = false;
+    bricks.forEach(function (brick) {
+
+        if (brick.y <= ball.y + ball.radius && //top
+            brick.x + brick.width >= ball.x - ball.radius && //right
+            brick.y + brick.height >= ball.y - ball.radius && //bottom
+            brick.x <= ball.x + ball.radius //left
+        ) {
+            bricks.splice(bricks.indexOf(brick), 1);
+            if (brick.y + brick.height < ball.y || brick.y > ball.y) {
+                yreverse = true;
+            }
+            if (brick.x + brick.width < ball.x || brick.x > ball.x) {
+                xreverse = true;
+            }
+
+        }
+    });
+    if (xreverse) {
+        ball.vx = -ball.vx;
+    }
+
+    if (yreverse) {
+        ball.vy = -ball.vy;
+    }
+    //console.log(yFlag + ", " + xFlag);
+
+}
 
 function drawCanvas(now) {
     var w = canvas.width;
@@ -52,17 +93,13 @@ function drawCanvas(now) {
     c.fillStyle = "blue";
     c.lineWidth = 2;
 
-    balls.forEach(function(ball){
-        ball.draw(c);
+    //Handles ball physics
+    balls.forEach(function (ball) {
+        collision(ball);
         ball.x += ball.vx;
         ball.y += ball.vy;
-
-        if (ball.y + ball.vy > canvas.height - ball.radius || ball.y + ball.vy < ball.radius) {
-            ball.vy = -ball.vy;
-        }
-        if (ball.x + ball.vx > canvas.width  - ball.radius || ball.x + ball.vx < ball.radius) {
-            ball.vx = -ball.vx;
-        }
+        ball.draw(c);
+        //Handle collisions
     });
 
     //console.log("bricks:" + bricks.length);
@@ -90,7 +127,7 @@ function initGame(bodyId, canvasId) {
         //console.log("on resize");
         resizeCanvas();
     });
-    var ball= new Ball(100,100,5,1,25,'green');
+    var ball = new Ball(120, 120, 5, -5, 6, 'green');
     balls.push(ball);
 
     // add bricks
@@ -110,61 +147,26 @@ function initGame(bodyId, canvasId) {
         }
         y += BRICK_HEIGHT;
     }
-
+    //bricks.push(new Brick(10,10))
     drawCanvas();
 }
 
 // from https://developers.google.com/web/fundamentals/native-hardware/fullscreen/
 function toggleFullscreen() {
-  var doc = window.document;
-  var docEl = doc.documentElement;
-  var img = document.getElementById('img-fullscreen');
+    var doc = window.document;
+    var docEl = doc.documentElement;
+    var img = document.getElementById('img-fullscreen');
 
-  var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
-  var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
+    var requestFullScreen = docEl.requestFullscreen || docEl.mozRequestFullScreen || docEl.webkitRequestFullScreen || docEl.msRequestFullscreen;
+    var cancelFullScreen = doc.exitFullscreen || doc.mozCancelFullScreen || doc.webkitExitFullscreen || doc.msExitFullscreen;
 
-  if(!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
-    requestFullScreen.call(docEl);
-    img.src = "images/return_from_full_screen.png";
-    img.alt = "Return from full screen";
-  } else {
-    cancelFullScreen.call(doc);
-    img.src = "images/full_screen.png";
-    img.alt = "Go full screen";
-  }
+    if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
+        requestFullScreen.call(docEl);
+        img.src = "images/return_from_full_screen.png";
+        img.alt = "Return from full screen";
+    } else {
+        cancelFullScreen.call(doc);
+        img.src = "images/full_screen.png";
+        img.alt = "Go full screen";
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
