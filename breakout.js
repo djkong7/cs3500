@@ -1,4 +1,6 @@
 var canvas = null;
+var c = null;
+var balls = [];
 
 function drawCanvas() {
     var w = canvas.width;
@@ -13,10 +15,22 @@ function drawCanvas() {
     c.strokeStyle = "blue";
     c.fillStyle = "blue";
     c.lineWidth = 2;
+    
+    balls.forEach(function(ball){
+        ball.draw(c);
+        ball.x += ball.vx;
+        ball.y += ball.vy;
 
-    c.beginPath();
-    c.arc(100, 100, 50, 0, Math.PI/2, true);
-    c.stroke();
+        if (ball.y + ball.vy > canvas.height - ball.radius || ball.y + ball.vy < ball.radius) {
+            ball.vy = -ball.vy;
+        }
+        if (ball.x + ball.vx > canvas.width  - ball.radius || ball.x + ball.vx < ball.radius) {
+            ball.vx = -ball.vx;
+        }
+    });
+    
+    
+    raf = window.requestAnimationFrame(drawCanvas);
 }
 
 function resizeCanvas() {
@@ -24,20 +38,24 @@ function resizeCanvas() {
     canvas.width = window.innerWidth - borderSize;
     canvas.height = window.innerHeight - borderSize;
 
-    drawCanvas();
+    //drawCanvas();
 }
 
 function initGame(bodyId, canvasId) {
     console.log('added event listener');
 
     canvas = document.getElementById(canvasId);
+    c = canvas.getContext('2d');
     resizeCanvas();
 
     window.addEventListener('resize', function (event) {
         //console.log("on resize");
         resizeCanvas();
     });
-
+    
+    var ball= new Ball(100,100,5,1,25,'green');
+    balls.push(ball);
+    
     drawCanvas();
 }
 
@@ -60,3 +78,53 @@ function toggleFullscreen() {
     img.alt = "Go full screen";
   }
 }
+
+function Ball(x,y,vx,vy,r,c) {
+    this.x = x;
+    this.y = y;
+    this.vx = vx;
+    this.vy = vy;
+    this.radius = r;
+    this.color = c;
+}
+
+Ball.prototype.draw = function(c){
+    c.beginPath();
+    c.arc(this.x,this.y,this.radius,0,2*Math.PI);
+    c.fillStyle = this.color;
+    c.fill();
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
