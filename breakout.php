@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Breakout - Danny Kiel, Steven Johnson</title>
     <link rel="stylesheet" href="breakout.css"/>
+    <script type="text/javascript" src="brick.js"></script>
+    <script type="text/javascript" src="paddle.js"></script>
+    <script type="text/javascript" src="ball.js"></script>
     <script type="text/javascript" src="breakout.js"></script>
 </head>
 <body id='body'>

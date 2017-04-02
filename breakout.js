@@ -21,140 +21,8 @@ function Player(id, name) {
     this.id = id;
     this.name = name;
     this.paddle = null;
-}
-
-function Brick(x, y) {
-    this.x = x;
-    this.y = y;
-    this.width = BRICK_WIDTH;
-    this.height = BRICK_HEIGHT;
-    this.color = 'red';
-}
-
-Brick.prototype.draw = function (c) {
-    c.beginPath();
-    // draw black edge for bottom right
-    c.fillStyle = EDGE_COLOR;
-    c.fillRect(this.x, this.y, this.width, this.height);
-    // draw actual brick
-    c.fillStyle = this.color;
-    c.fillRect(this.x, this.y, this.width - 1, this.height - 1);
-    c.stroke();
-};
-
-function Ball(x, y, vx, vy, r, c) {
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-    this.radius = r;
-    this.color = c;
-}
-
-Ball.prototype.draw = function(c) {
-    c.beginPath();
-    c.arc(this.x, this.y, this.radius, 0, 2 * Math.PI);
-    c.fillStyle = this.color;
-    c.fill();
-};
-
-//Handles ball collision
-function collision(ball) {
-    //Edge of scrren
-    if (ball.y > canvas.height - ball.radius || ball.y < ball.radius) {
-        ball.vy = -ball.vy;
-    }
-    if (ball.x > canvas.width - ball.radius || ball.x < ball.radius) {
-        ball.vx = -ball.vx;
-    }
-
-    //Bricks
-    var yreverse = false;
-    var xreverse = false;
-    bricks.forEach(function (brick) {
-
-        if (brick.y <= ball.y + ball.radius && //top
-            brick.x + brick.width >= ball.x - ball.radius && //right
-            brick.y + brick.height >= ball.y - ball.radius && //bottom
-            brick.x <= ball.x + ball.radius //left
-        ) {
-            bricks.splice(bricks.indexOf(brick), 1);
-            if (brick.y + brick.height < ball.y || brick.y > ball.y) {
-                yreverse = true;
-            }
-            if (brick.x + brick.width < ball.x || brick.x > ball.x) {
-                xreverse = true;
-            }
-
-        }
-    });
-    if (xreverse) {
-        ball.vx = -ball.vx;
-    }
-
-    if (yreverse) {
-        ball.vy = -ball.vy;
-    }
-    //console.log(yFlag + ", " + xFlag);
-}
-
-function Paddle(x, y, vx, vy) {
-    this.x = x;
-    this.y = y;
-    this.vx = vx;
-    this.vy = vy;
-    this.targetX = 0; // where it moves to, then stops
-    this.width = PADDLE_WIDTH;
-    this.height = PADDLE_HEIGHT;
-    this.color = "blue";
-}
-
-Paddle.prototype.draw = function(c) {
-    c.beginPath();
-    // draw black edge for bottom right
-    c.fillStyle = EDGE_COLOR;
-    c.fillRect(this.x, this.y, this.width, this.height);
-    // draw actual paddle
-    c.fillStyle = this.color;
-    c.fillRect(this.x, this.y, this.width-1, this.height-1);
-    c.stroke();
-}
-
-Paddle.prototype.update = function() {
-
-    if (this.targetX != 0) {
-        if (this.x > this.targetX) {
-            this.vx = -PADDLE_SPEED;
-        } else {
-            this.vx = PADDLE_SPEED;
-        }
-
-        if (Math.abs(this.targetX - this.x) <= 1) {
-            this.targetX = 0;
-            this.vx = 0;
-        }
-    }
-    this.x += this.vx;
-    this.y += this.vy;
-
-    if (this.x < 0 ) this.x = 0;
-    if (this.x > canvas.width - this.width) this.x = canvas.width - this.width;
-}
-
-Paddle.prototype.moveLeft = function() {
-    this.vx = -PADDLE_SPEED;
-    this.targetX = 0;
-}
-
-Paddle.prototype.moveRight = function() {
-    this.vx = PADDLE_SPEED;
-    this.targetX = 0;
-}
-
-Paddle.prototype.stop = function() {
-    this.vx = 0;
-    this.vy = 0;
-    this.targetX = 0;
+    this.bricks = null;
+    this.balls = null;
 }
 
 function drawCanvas(now) {
@@ -172,7 +40,7 @@ function drawCanvas(now) {
 
     //Handles ball physics
     balls.forEach(function (ball) {
-        collision(ball);
+        ball.collideBricks(bricks);
         ball.x += ball.vx;
         ball.y += ball.vy;
         ball.draw(c);
