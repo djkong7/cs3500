@@ -8,6 +8,7 @@
     <script type="text/javascript" src="brick.js"></script>
     <script type="text/javascript" src="paddle.js"></script>
     <script type="text/javascript" src="ball.js"></script>
+    <script type="text/javascript" src="collisions.js"></script>
     <script type="text/javascript" src="breakout.js"></script>
 </head>
 <body id='body'>

@@ -11,8 +11,6 @@ var KEY_DOWN = 40;
 
 var canvas = null;
 var c = null;
-var balls = [];
-var bricks = [];
 var players = [];
 var local_player = null;
 var next_player_id = 0;
@@ -28,34 +26,44 @@ function Player(id, name) {
 function drawCanvas(now) {
     var w = canvas.width;
     var h = canvas.height;
+    var bricks = null;
+    var balls = null;
+    var hit_bottom = false;
 
     c.strokeStyle = "gray";
     c.fillStyle = "#EEE";
 
     c.fillRect(0, 0, w, h); // clears
 
-    c.strokeStyle = "blue";
-    c.fillStyle = "blue";
-    c.lineWidth = 2;
-
-    //Handles ball physics
-    balls.forEach(function (ball) {
-        ball.collideBricks(bricks);
-        ball.x += ball.vx;
-        ball.y += ball.vy;
-        ball.draw(c);
-        //Handle collisions
-    });
-
-    // draw bricks
-    for (var i = 0; i < bricks.length; ++i) {
-        bricks[i].draw(c);
-    }
-
-    // draw paddles
     for (var i = 0; i < players.length; ++i) {
-        players[i].paddle.update();
-        players[i].paddle.draw(c);
+        player = players[i];
+        balls = player.balls;
+        bricks = player.bricks;
+        paddle = player.paddle;
+
+        // TODO: Collide everything, update everything, then draw everything
+
+        // handle collisions
+        balls.forEach(function (ball) {
+            collideBallAndPlayerBricks(ball, bricks);
+            collideBallAndPlayerPaddle(ball, paddle);
+            hit_bottom = collideBallAndScreen(ball, player == local_player);
+            if (hit_bottom) {
+                // TODO: remove ball and allow adding another from paddle
+                console.log("Hit bottom!");
+            }
+            ball.update();
+            ball.draw(c);
+        });
+
+        // draw bricks
+        for (var j = 0; j < bricks.length; ++j) {
+            bricks[j].draw(c);
+        }
+
+        // draw paddles
+        paddle.update();
+        paddle.draw(c);
     }
 
     raf = window.requestAnimationFrame(drawCanvas);
@@ -73,6 +81,9 @@ function createPlayer() {
         canvas.width / 2 - PADDLE_WIDTH / 2,
         canvas.height - PADDLE_HEIGHT - 10,
         0, 0);
+
+    player.balls = [];
+    player.bricks = [];
 
     return player;
 }
@@ -97,6 +108,7 @@ function initGame(bodyId, canvasId) {
 
     var player = createPlayer();
     local_player = player;
+    player.balls.push(ball);
     players.push(player);
 
     window.addEventListener('mousemove', function(event) {
@@ -127,8 +139,6 @@ function initGame(bodyId, canvasId) {
         }
     });
 
-    balls.push(ball);
-
     // add bricks
     var num_bricks = Math.floor(canvas.width / BRICK_WIDTH);
     var x_offset = (canvas.width - num_bricks * BRICK_WIDTH) / 2;
@@ -142,7 +152,7 @@ function initGame(bodyId, canvasId) {
             if (i == 0 || i == num_bricks - 1) {
                 b.color = 'gold';
             }
-            bricks.push(b);
+            player.bricks.push(b);
         }
         y += BRICK_HEIGHT;
     }
