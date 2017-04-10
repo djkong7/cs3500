@@ -165,6 +165,7 @@ function initGame(bodyId, canvasId) {
             local_player.paddle.moveRight();
         } else if (event.keyCode == KEY_SPACE) {
             local_player.paddle.releaseBall();
+            event.preventDefault();
         } else {
             console.log(event.keyCode);
         }
