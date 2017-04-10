@@ -3,11 +3,16 @@ var BRICK_HEIGHT = 20;
 var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
 var PADDLE_SPEED = 3;
+var BALL_SPEED = 3;
 var EDGE_COLOR = "black";
+var KEY_SPACE = 32;
 var KEY_LEFT = 37;
 var KEY_UP = 38;
 var KEY_RIGHT = 39;
 var KEY_DOWN = 40;
+var MAX_BOUNCE_ANGLE =  Math.PI / 2;
+var SCORE_BRICK_DESTROY = 1;
+var SCORE_BALL_LOST = -5;
 
 var canvas = null;
 var c = null;
@@ -21,8 +26,11 @@ function Player(id, name) {
     this.paddle = null;
     this.bricks = null;
     this.balls = null;
+    this.score = 0;
 }
 
+/** Draw the canvas and do game logic
+ */
 function drawCanvas(now) {
     var w = canvas.width;
     var h = canvas.height;
@@ -45,15 +53,24 @@ function drawCanvas(now) {
 
         // handle collisions
         balls.forEach(function (ball) {
-            collideBallAndPlayerBricks(ball, bricks);
-            collideBallAndPlayerPaddle(ball, paddle);
-            hit_bottom = collideBallAndScreen(ball, player == local_player);
-            if (hit_bottom) {
-                // TODO: remove ball and allow adding another from paddle
-                console.log("Hit bottom!");
+            if (!ball.attachedPaddle) {
+                collideBallAndPlayerBricks(ball, player, bricks);
+                collideBallAndPlayerPaddle(ball, paddle);
+                hit_bottom = collideBallAndScreen(ball, player == local_player);
             }
-            ball.update();
-            ball.draw(c);
+            if (hit_bottom) {
+                // remove ball from player
+                player.balls.splice(player.balls.indexOf(ball), 1);
+
+                // reduce score
+                player.score += SCORE_BALL_LOST;
+
+                // new ball for player
+                newBall();
+            } else {
+                ball.update();
+                ball.draw(c);
+            }
         });
 
         // draw bricks
@@ -62,6 +79,7 @@ function drawCanvas(now) {
         }
 
         // draw paddles
+        paddle.text = player.score;
         paddle.update();
         paddle.draw(c);
     }
@@ -69,17 +87,30 @@ function drawCanvas(now) {
     raf = window.requestAnimationFrame(drawCanvas);
 }
 
+/** Resize the canvas to the window size
+ */
 function resizeCanvas() {
     var borderSize = 2;
     canvas.width = window.innerWidth - borderSize;
     canvas.height = window.innerHeight - borderSize;
 }
 
+/** Create a ball and attach it to the local players paddle
+ */
+function newBall() {
+    var ball = new Ball(0, 0, BALL_SPEED, 6, 'green');
+    local_player.paddle.attachBall(ball);
+
+    local_player.balls.push(ball);
+}
+
+/** Create a player and return it
+ */
 function createPlayer() {
     var player = new Player(next_player_id++, "Steven");
     player.paddle = new Paddle(
         canvas.width / 2 - PADDLE_WIDTH / 2,
-        canvas.height - PADDLE_HEIGHT - 10,
+        canvas.height - PADDLE_HEIGHT - 50,
         0, 0);
 
     player.balls = [];
@@ -88,10 +119,14 @@ function createPlayer() {
     return player;
 }
 
+/** Move the local players paddle towards the given coords
+ */
 function movePaddle(x, y) {
     local_player.paddle.targetX = x - PADDLE_WIDTH / 2;
 }
 
+/** Initialize the game
+ */
 function initGame(bodyId, canvasId) {
     console.log('added event listener');
 
@@ -104,11 +139,9 @@ function initGame(bodyId, canvasId) {
         resizeCanvas();
     });
 
-    var ball = new Ball(120, 120, 5, -5, 6, 'green');
-
     var player = createPlayer();
     local_player = player;
-    player.balls.push(ball);
+    newBall();
     players.push(player);
 
     window.addEventListener('mousemove', function(event) {
@@ -130,6 +163,10 @@ function initGame(bodyId, canvasId) {
             local_player.paddle.moveLeft();
         } else if (event.keyCode == KEY_RIGHT) {
             local_player.paddle.moveRight();
+        } else if (event.keyCode == KEY_SPACE) {
+            local_player.paddle.releaseBall();
+        } else {
+            console.log(event.keyCode);
         }
     });
 
@@ -160,7 +197,10 @@ function initGame(bodyId, canvasId) {
     drawCanvas();
 }
 
-// from https://developers.google.com/web/fundamentals/native-hardware/fullscreen/
+/** Toggle fullscreen for the canvas
+ *
+ * from https://developers.google.com/web/fundamentals/native-hardware/fullscreen/
+ */
 function toggleFullscreen() {
     var doc = window.document;
     var docEl = doc.documentElement;

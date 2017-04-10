@@ -1,3 +1,10 @@
+/** Have the ball bounce off the screen edges
+ *
+ * Ball ball     - the ball that is colliding
+ * bool is_local - if this is a local player ball
+ *
+ * Returns true if is_local and ball hit bottom of screen
+ */
 function collideBallAndScreen(ball, is_local) {
     var hit_bottom = false;
     //Edge of scrren
@@ -18,8 +25,13 @@ function collideBallAndScreen(ball, is_local) {
     return hit_bottom;
 }
 
-//Handles ball collision
-function collideBallAndPlayerBricks(ball, bricks) {
+/** Have the ball bounce off and destroy bricks
+ *
+ * Ball ball     - the ball that is colliding
+ * Player player - the player to be rewarded for breaking bricks
+ * Brick brick   - bricks array for one player
+ */
+function collideBallAndPlayerBricks(ball, player, bricks) {
     //Bricks
     var yreverse = false;
     var xreverse = false;
@@ -30,6 +42,7 @@ function collideBallAndPlayerBricks(ball, bricks) {
             brick.y + brick.height >= ball.y - ball.radius && //bottom
             brick.x <= ball.x + ball.radius //left
         ) {
+            player.score += SCORE_BRICK_DESTROY;
             bricks.splice(bricks.indexOf(brick), 1);
             if (brick.y + brick.height < ball.y || brick.y > ball.y) {
                 yreverse = true;
@@ -50,6 +63,11 @@ function collideBallAndPlayerBricks(ball, bricks) {
     //console.log(yFlag + ", " + xFlag);
 }
 
+/** Have the ball bounce off a paddle
+ *
+ * Ball ball     - the ball that is colliding
+ * Paddle paddle - the paddle to check for colliding
+ */
 function collideBallAndPlayerPaddle(ball, paddle) {
     if (paddle.y <= ball.y + ball.radius &&
         paddle.x + paddle.width >= ball.x - ball.radius &&
@@ -61,6 +79,17 @@ function collideBallAndPlayerPaddle(ball, paddle) {
         }
         if (paddle.x + paddle.width < ball.x || paddle.x > ball.x) {
             ball.vx = -ball.vx;
+        }
+
+        // TODO: Assumes paddle is at bottom of screen, check if not
+        if (paddle.y > ball.y) {
+            // bounce ball at angle proportional to distance from paddle center
+            var diff = ball.x - paddle.x - (paddle.width / 2);
+            var normalized = 1 - diff / paddle.width;
+            var angle = normalized * MAX_BOUNCE_ANGLE + Math.PI / 2;
+
+            ball.vx = ball.speed * Math.sin(angle);
+            ball.vy = -Math.abs(ball.speed * Math.cos(angle));
         }
     }
 }

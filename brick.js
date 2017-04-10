@@ -6,6 +6,8 @@ function Brick(x, y) {
     this.color = 'red';
 }
 
+/** Draw the brick
+ */
 Brick.prototype.draw = function (c) {
     c.beginPath();
     // draw black edge for bottom right
