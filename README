@@ -8,3 +8,10 @@ $ git clone http://danny@shjohnson314.webfactional.com/git/cs3500.git
 Cloning into 'cs3500'...
 Username for 'https://shjohnson314.webfactional.com': danny
 Password for 'https://danny@shjohnson314.webfactional.com':
+
+
+To run on Node.js:
+install Node.js 'https://nodejs.org/en/' (default is fine)
+open terminal and navigate to project directory
+run 'node index.js'
+in browser, navigate to localhost:3000

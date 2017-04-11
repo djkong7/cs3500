@@ -1,0 +1,9 @@
+{
+  "name": "breakout",
+  "version": "0.0.1",
+  "description": "breakout game",
+  "dependencies": {
+      "express": "lateset",
+      "socket.io": "latest",
+  }
+}
