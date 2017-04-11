@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head lang="en">
     <meta charset="utf-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,12 +11,20 @@
     <script type="text/javascript" src="/ball.js"></script>
     <script type="text/javascript" src="/collisions.js"></script>
     <script type="text/javascript" src="/breakout.js"></script>
+    <!--<script src="https://cdn.socket.io/socket.io-1.7.3.js"></script>-->
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var socket = io();
+    </script>
 </head>
+
 <body id='body'>
     <button id="btn-fullscreen" onclick="toggleFullscreen();"><img id='img-fullscreen' src="images/full_screen.png" alt="Go full screen"/></button>
     <canvas id="game-canvas">Canvas not supported :(</canvas>
     <script type="text/javascript">
-    initGame('body', 'game-canvas');
+        initGame('body', 'game-canvas');
+
     </script>
 </body>
+
 </html>
