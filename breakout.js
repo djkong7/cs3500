@@ -127,56 +127,70 @@ function movePaddle(x, y) {
 
 /** Initialize the game
  */
-function initGame(bodyId, canvasId) {
-    console.log('added event listener');
+function initGame(bodyId, canvasId, socket) {
+    var host = true;
+    
+    socket.on('host',function(msg){
+        console.log(msg.message);
+        console.log(msg.host);
+        host = msg.host;
+    });
+    
+        console.log('added event listener');
 
-    canvas = document.getElementById(canvasId);
-    c = canvas.getContext('2d');
-    resizeCanvas();
-
-    window.addEventListener('resize', function (event) {
-        //console.log("on resize");
+        canvas = document.getElementById(canvasId);
+        c = canvas.getContext('2d');
         resizeCanvas();
-    });
 
-    var player = createPlayer();
-    local_player = player;
-    newBall();
-    players.push(player);
+        window.addEventListener('resize', function (event) {
+            //console.log("on resize");
+            resizeCanvas();
+        });
 
-    window.addEventListener('mousemove', function(event) {
-        movePaddle(event.offsetX, event.offsetY);
-    });
+        var player = createPlayer();
+        local_player = player;
+        newBall();
+        players.push(player);
+    
+    //If the player is the host, draw game but don't attach listeners to wait until
+    //another player connects.
+    if(!host){
+        //Mouse move event causing a lot of paddle rubberbanding issues for me
+        //window.addEventListener('mousemove', function(event) {
+        //    movePaddle(event.offsetX, event.offsetY);
+        //});
 
-    window.addEventListener('touchstart', function(event) {
-        var touch = event.changedTouches[event.changedTouches.length - 1];
-        movePaddle(touch.pageX, touch.pageY);
-    });
+        window.addEventListener('touchstart', function(event) {
+            var touch = event.changedTouches[event.changedTouches.length - 1];
+            movePaddle(touch.pageX, touch.pageY);
+        });
 
-    window.addEventListener('touchmove', function(event) {
-        var touch = event.changedTouches[event.changedTouches.length - 1];
-        movePaddle(touch.pageX, touch.pageY);
-    });
+        window.addEventListener('touchmove', function(event) {
+            var touch = event.changedTouches[event.changedTouches.length - 1];
+            movePaddle(touch.pageX, touch.pageY);
+        });
 
-    window.addEventListener('keydown', function(event) {
-        if (event.keyCode == KEY_LEFT) {
-            local_player.paddle.moveLeft();
-        } else if (event.keyCode == KEY_RIGHT) {
-            local_player.paddle.moveRight();
-        } else if (event.keyCode == KEY_SPACE) {
-            local_player.paddle.releaseBall();
-            event.preventDefault();
-        } else {
-            console.log(event.keyCode);
-        }
-    });
+        window.addEventListener('keydown', function(event) {
+            if (event.keyCode == KEY_LEFT) {
+                local_player.paddle.moveLeft();
+            } else if (event.keyCode == KEY_RIGHT) {
+                local_player.paddle.moveRight();
+            } else if (event.keyCode == KEY_SPACE) {
+                local_player.paddle.releaseBall();
+                event.preventDefault();
+            } else {
+                console.log(event.keyCode);
+            }
+        });
 
-    window.addEventListener('keyup', function(event) {
-        if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
-            local_player.paddle.stop();
-        }
-    });
-
+        window.addEventListener('keyup', function(event) {
+            if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
+                local_player.paddle.stop();
+            }
+        });
+    }else{
+        //overlay something over the canvas to indicate that client is waiting for opponent
+    }
     // add bricks
     var num_bricks = Math.floor(canvas.width / BRICK_WIDTH);
     var x_offset = (canvas.width - num_bricks * BRICK_WIDTH) / 2;

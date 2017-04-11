@@ -1,13 +1,10 @@
-const PORT = 3000;
-
-// Create an Express variable
-const express = require('express');
-
-// Create a new Express application
-const app = express();
-
-// Create an http server with Node's HTTP module. 
-const server = require('http').Server(app);
+var express = require('express'); // Create an Express variable
+var app = express(); // Create a new Express application
+var server = require('http').Server(app); // Create an http server with Node's HTTP module. 
+var io = require('socket.io').listen(server); // Instantiate Socket.IO hand have it listen on the Express/HTTP server
+var port = process.env.PORT || 3000;
+var game = require('./breakoutServer');
+//console.log(game);
 
 // Setup default directory for client (used for src='' in html file)
 app.use(express.static(__dirname));
@@ -17,14 +14,20 @@ app.get('/', function (req, res) {
     res.sendFile(__dirname + '/breakout.html');
 });
 
-// Instantiate Socket.IO hand have it listen on the Express/HTTP server
-const io = require('socket.io').listen(server);
-
+// Executes when a client connects
 io.on('connection', function (socket) {
     console.log('a user connected');
+    //Initialize the game on the server
+    game.initGame(io,socket);
+    socket.on('disconnect',function(){
+        console.log('a user disconnected');
+    });
 });
 
 // Listen on port 3000
-app.listen(PORT, function () {
-    //console.log('listening on *:3000');
+server.listen(port, function () {
+    console.log('listening on :' + port);
 });
+
+
+
