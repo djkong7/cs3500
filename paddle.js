@@ -44,8 +44,6 @@ Paddle.prototype.update = function() {
         if (Math.abs(this.targetX - this.x) <= PADDLE_SPEED) {
             this.targetX = 0;
             this.vx = 0;
-        } else {
-            console.log(Math.abs(this.targetX - this.x));
         }
     }
     this.x += this.vx;

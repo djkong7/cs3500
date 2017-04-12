@@ -19,7 +19,9 @@ var c = null;
 var players = [];
 var local_player = null;
 var next_player_id = 0;
-var first
+
+var first = false;
+var global = null;
 
 var socket;
 
@@ -168,8 +170,10 @@ function initGame(bodyId, canvasId) {
         window.addEventListener('keydown', function (event) {
             if (event.keyCode == KEY_LEFT) {
                 local_player.paddle.moveLeft();
+                socket.emit("move-left", {player: local_player.id});
             } else if (event.keyCode == KEY_RIGHT) {
                 local_player.paddle.moveRight();
+                socket.emit("move-right", {player: local_player.id});
             } else if (event.keyCode == KEY_SPACE) {
                 local_player.paddle.releaseBall();
                 event.preventDefault();
@@ -232,11 +236,21 @@ function toggleFullscreen() {
 
 function setup(socket) {
     socket = io.connect();
+    initGame('body', 'game-canvas');
     socket.on('first', function (msg) {
         console.log(msg.message);
         console.log(msg.first);
+        console.log(msg);
+        local_player.id = msg.playerId;
         first = msg.first;
-        initGame('body', 'game-canvas');
+    });
+
+    socket.on('move-left', function(data) {
+        console.log("Player moved left", data);
+    });
+
+    socket.on('move-right', function(data) {
+        console.log("Player moved right", data);
     });
 
 }
