@@ -21,6 +21,8 @@ var local_player = null;
 var next_player_id = 0;
 var first
 
+var socket;
+
 function Player(id, name) {
     this.id = id;
     this.name = name;
@@ -229,6 +231,7 @@ function toggleFullscreen() {
 }
 
 function setup(socket) {
+    socket = io.connect();
     socket.on('first', function (msg) {
         console.log(msg.message);
         console.log(msg.first);
