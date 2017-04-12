@@ -1,3 +1,5 @@
+#!/usr/bin/env nodejs
+
 var express = require('express'); // Create an Express variable
 var app = express(); // Create a new Express application
 var server = require('http').Server(app); // Create an http server with Node's HTTP module. 
