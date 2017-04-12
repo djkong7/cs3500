@@ -10,7 +10,7 @@ var KEY_LEFT = 37;
 var KEY_UP = 38;
 var KEY_RIGHT = 39;
 var KEY_DOWN = 40;
-var MAX_BOUNCE_ANGLE =  Math.PI / 2;
+var MAX_BOUNCE_ANGLE = Math.PI / 2;
 var SCORE_BRICK_DESTROY = 1;
 var SCORE_BALL_LOST = -5;
 
@@ -19,6 +19,7 @@ var c = null;
 var players = [];
 var local_player = null;
 var next_player_id = 0;
+var first
 
 function Player(id, name) {
     this.id = id;
@@ -127,50 +128,42 @@ function movePaddle(x, y) {
 
 /** Initialize the game
  */
-function initGame(bodyId, canvasId, socket) {
-    var host = true;
-    
-    socket.on('host',function(msg){
-        console.log(msg.message);
-        console.log(msg.host);
-        host = msg.host;
-    });
-    
-        console.log('added event listener');
+function initGame(bodyId, canvasId) {
+    console.log('added event listener');
 
-        canvas = document.getElementById(canvasId);
-        c = canvas.getContext('2d');
+    canvas = document.getElementById(canvasId);
+    c = canvas.getContext('2d');
+    resizeCanvas();
+
+    window.addEventListener('resize', function (event) {
+        //console.log("on resize");
         resizeCanvas();
+    });
 
-        window.addEventListener('resize', function (event) {
-            //console.log("on resize");
-            resizeCanvas();
-        });
+    var player = createPlayer();
+    local_player = player;
+    newBall();
+    players.push(player);
 
-        var player = createPlayer();
-        local_player = player;
-        newBall();
-        players.push(player);
-    
-    //If the player is the host, draw game but don't attach listeners to wait until
+    //If the player is the first, draw game but don't attach listeners to wait until
     //another player connects.
-    if(!host){
+    if (!first) {
         //Mouse move event causing a lot of paddle rubberbanding issues for me
         //window.addEventListener('mousemove', function(event) {
         //    movePaddle(event.offsetX, event.offsetY);
         //});
 
-        window.addEventListener('touchstart', function(event) {
+        window.addEventListener('touchstart', function (event) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
             movePaddle(touch.pageX, touch.pageY);
         });
 
-        window.addEventListener('touchmove', function(event) {
+        window.addEventListener('touchmove', function (event) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
             movePaddle(touch.pageX, touch.pageY);
         });
 
-        window.addEventListener('keydown', function(event) {
+        window.addEventListener('keydown', function (event) {
             if (event.keyCode == KEY_LEFT) {
                 local_player.paddle.moveLeft();
             } else if (event.keyCode == KEY_RIGHT) {
@@ -183,12 +176,12 @@ function initGame(bodyId, canvasId, socket) {
             }
         });
 
-        window.addEventListener('keyup', function(event) {
+        window.addEventListener('keyup', function (event) {
             if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
                 local_player.paddle.stop();
             }
         });
-    }else{
+    } else {
         //overlay something over the canvas to indicate that client is waiting for opponent
     }
     // add bricks
@@ -233,4 +226,14 @@ function toggleFullscreen() {
         img.src = "images/full_screen.png";
         img.alt = "Go full screen";
     }
+}
+
+function setup(socket) {
+    socket.on('first', function (msg) {
+        console.log(msg.message);
+        console.log(msg.first);
+        first = msg.first;
+        initGame('body', 'game-canvas');
+    });
+    
 }
