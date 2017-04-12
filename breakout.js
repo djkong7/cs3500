@@ -234,7 +234,7 @@ function toggleFullscreen() {
     }
 }
 
-function setup(socket) {
+function setup() {
     socket = io.connect();
     initGame('body', 'game-canvas');
     socket.on('first', function (msg) {
