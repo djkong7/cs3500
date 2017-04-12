@@ -147,11 +147,11 @@ function initGame(bodyId, canvasId) {
 
     //If the player is the first, draw game but don't attach listeners to wait until
     //another player connects.
-    if (!first) {
+    //if (!first) {
         //Mouse move event causing a lot of paddle rubberbanding issues for me
-        //window.addEventListener('mousemove', function(event) {
-        //    movePaddle(event.offsetX, event.offsetY);
-        //});
+        window.addEventListener('mousemove', function(event) {
+            movePaddle(event.offsetX, event.offsetY);
+        });
 
         window.addEventListener('touchstart', function (event) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
@@ -181,9 +181,9 @@ function initGame(bodyId, canvasId) {
                 local_player.paddle.stop();
             }
         });
-    } else {
+    //} else {
         //overlay something over the canvas to indicate that client is waiting for opponent
-    }
+    //}
     // add bricks
     var num_bricks = Math.floor(canvas.width / BRICK_WIDTH);
     var x_offset = (canvas.width - num_bricks * BRICK_WIDTH) / 2;
@@ -235,5 +235,5 @@ function setup(socket) {
         first = msg.first;
         initGame('body', 'game-canvas');
     });
-    
+
 }
