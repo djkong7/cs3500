@@ -23,7 +23,7 @@ io.on('connection', function (socket) {
     game.onConnect(io,socket);
     socket.on('disconnect',function(){
         console.log('a user disconnected');
-        game.onDisconnect();
+        game.onDisconnect(io,socket);
     });
 });
 

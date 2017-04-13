@@ -1,35 +1,52 @@
-var gameIo;
-var gameSocket;
+var io;
+var socket;
 var numPlayers = 0;
 var nextId = 0;
 var gameId = 0;
 
 exports.onConnect = function(io,socket){
-    gameIo = io;
-    gameSocket = socket;
+    this.io = io;
+    this.socket = socket;
 
-    gameSocket.on('move-left', function(data) {
-        console.log("Player moved left", data);
-
-        // send to other players
-        gameSocket.broadcast.emit('move-left', data);
-    });
-
-    gameSocket.on('move-right', function(data) {
-        console.log("Player moved right", data);
+    socket.on('move-left', function(data) {
+        console.log('Player moved left', data);
 
         // send to other players
-        gameSocket.broadcast.emit('move-right', data);
+        socket.broadcast.emit('move-left', data);
     });
 
-    gameSocket.emit('player-join', {message: 'You are the only player', only: numPlayers === 0, playerId: nextId++, gameId: gameId});
+    socket.on('move-right', function(data) {
+        console.log('Player moved right', data);
+
+        // send to other players
+        socket.broadcast.emit('move-right', data);
+    });
+
+
+    socket.emit('player-join', {message: 'You are the only player', only: numPlayers === 0, playerId: nextId++, gameId: gameId});
     numPlayers++;
-    gameSocket.broadcast.emit('player-join', {message: 'Another player joined', only: false});
+    socket.broadcast.emit('player-join', {message: 'Another player joined', only: false});
     console.log(numPlayers);
+
+    socket.on('move', function(data) {
+        console.log('Player moved', data);
+
+        // send to other players
+        socket.broadcast.emit('move', data);
+    });
+
+    socket.on('stop', function(data) {
+        console.log('Player stopped', data);
+
+        // send to other players
+        socket.broadcast.emit('stop', data);
+    });
+
 }
 
-exports.onDisconnect = function (){
+exports.onDisconnect = function (io,socket){
     numPlayers--;
-    gameSocket.broadcast.emit('player-leave', {message: 'The other player left', only: numPlayers === 1});
+    
+    this.socket.broadcast.emit('player-leave', {message: 'The other player left', only: numPlayers === 1});
     console.log(numPlayers);
 }
