@@ -19,6 +19,7 @@ var canvas = null;
 var c = null;
 var players = [];
 var local_player = null;
+var other_player = null;
 var next_player_id = 0;
 
 var first = false;
@@ -172,24 +173,23 @@ function initGame(bodyId, canvasId) {
         resizeCanvas();
     });
 
-    var player = createPlayer();
-    local_player = player;
-    newBall(player);
-    addBricks(player, true);
-    players.push(player);
+    local_player = createPlayer();
+    newBall(local_player);
+    addBricks(local_player, true);
+    players.push(local_player);
 
-    var player2 = createPlayer();
-    player2.paddle.y = 50;
-    newBall(player2);
-    addBricks(player2, false);
-    players.push(player2);
+    other_player = createPlayer();
+    other_player.paddle.y = 50;
+    newBall(other_player);
+    addBricks(other_player, false);
+    players.push(other_player);
 
     //If the player is the first, draw game but don't attach listeners to wait until
     //another player connects.
     //if (!first) {
         //Mouse move event causing a lot of paddle rubberbanding issues for me
         window.addEventListener('mousemove', function(event) {
-            movePaddle(event.offsetX, event.offsetY);
+            //movePaddle(event.offsetX, event.offsetY);
         });
 
         window.addEventListener('touchstart', function (event) {
@@ -220,6 +220,7 @@ function initGame(bodyId, canvasId) {
         window.addEventListener('keyup', function (event) {
             if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
                 local_player.paddle.stop();
+                socket.emit("stop", {player: local_player.id});
             }
         });
     //} else {
@@ -264,11 +265,24 @@ function setup() {
     });
 
     socket.on('move-left', function(data) {
+        if (data.player != local_player.id) {
+            other_player.paddle.moveLeft();
+        }
         console.log("Player moved left", data);
     });
 
     socket.on('move-right', function(data) {
+        if (data.player != local_player.id) {
+            other_player.paddle.moveRight();
+        }
         console.log("Player moved right", data);
+    });
+
+    socket.on('stop', function(data) {
+        if (data.player != local_player.id) {
+            other_player.paddle.stop();
+        }
+        console.log("Player stopped", data);
     });
 
 }

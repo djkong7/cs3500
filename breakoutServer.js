@@ -21,6 +21,20 @@ exports.initGame = function(io,socket){
         socket.broadcast.emit('move-right', data);
     });
 
+    socket.on('move', function(data) {
+        console.log("Player moved", data);
+
+        // send to other players
+        socket.broadcast.emit("move", data);
+    });
+
+    socket.on('stop', function(data) {
+        console.log("Player stopped", data);
+
+        // send to other players
+        socket.broadcast.emit('stop', data);
+    });
+
 
     socket.emit('first', {message: 'You are the first player', first: true, playerId: nextId++})
 }
