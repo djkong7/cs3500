@@ -1,26 +1,35 @@
-var io;
-var socket;
-var numPlayers;
+var gameIo;
+var gameSocket;
+var numPlayers = 0;
 var nextId = 0;
+var gameId = 0;
 
-exports.initGame = function(io,socket){
-    this.io = io;
-    this.socket = socket;
+exports.onConnect = function(io,socket){
+    gameIo = io;
+    gameSocket = socket;
 
-    socket.on('move-left', function(data) {
+    gameSocket.on('move-left', function(data) {
         console.log("Player moved left", data);
 
         // send to other players
-        socket.broadcast.emit('move-left', data);
+        gameSocket.broadcast.emit('move-left', data);
     });
 
-    socket.on('move-right', function(data) {
+    gameSocket.on('move-right', function(data) {
         console.log("Player moved right", data);
 
         // send to other players
-        socket.broadcast.emit('move-right', data);
+        gameSocket.broadcast.emit('move-right', data);
     });
 
+    gameSocket.emit('player-join', {message: 'You are the only player', only: numPlayers === 0, playerId: nextId++, gameId: gameId});
+    numPlayers++;
+    gameSocket.broadcast.emit('player-join', {message: 'Another player joined', only: false});
+    console.log(numPlayers);
+}
 
-    socket.emit('first', {message: 'You are the first player', first: true, playerId: nextId++})
+exports.onDisconnect = function (){
+    numPlayers--;
+    gameSocket.broadcast.emit('player-leave', {message: 'The other player left', only: numPlayers === 1});
+    console.log(numPlayers);
 }

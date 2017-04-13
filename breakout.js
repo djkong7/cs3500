@@ -4,7 +4,7 @@ var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
 var PADDLE_SPEED = 7;
 var BALL_SPEED = 7;
-var EDGE_COLOR = "black";
+var EDGE_COLOR = 'black';
 var KEY_SPACE = 32;
 var KEY_LEFT = 37;
 var KEY_UP = 38;
@@ -20,10 +20,8 @@ var players = [];
 var local_player = null;
 var next_player_id = 0;
 
-var first = false;
-var global = null;
-
-var socket;
+var only = false;
+var socket = null;
 
 function Player(id, name) {
     this.id = id;
@@ -43,8 +41,8 @@ function drawCanvas(now) {
     var balls = null;
     var hit_bottom = false;
 
-    c.strokeStyle = "gray";
-    c.fillStyle = "#EEE";
+    c.strokeStyle = 'gray';
+    c.fillStyle = '#EEE';
 
     c.fillRect(0, 0, w, h); // clears
 
@@ -89,6 +87,16 @@ function drawCanvas(now) {
         paddle.draw(c);
     }
 
+    if (only) {
+        c.fillStyle = 'rgba(10,10,10,.8)';
+        c.fillRect(0, 0, w, h);
+
+        c.fillStyle = 'white';
+        c.font = 'bold 4em sans-serif';
+        c.textAlign = 'center';
+        c.fillText('Waiting for an opponent', w / 2, h / 2);
+    }
+
     raf = window.requestAnimationFrame(drawCanvas);
 }
 
@@ -112,7 +120,7 @@ function newBall() {
 /** Create a player and return it
  */
 function createPlayer() {
-    var player = new Player(next_player_id++, "Steven");
+    var player = new Player(next_player_id++, 'Steven');
     player.paddle = new Paddle(
         canvas.width / 2 - PADDLE_WIDTH / 2,
         canvas.height - PADDLE_HEIGHT - 50,
@@ -133,6 +141,11 @@ function movePaddle(x, y) {
 /** Initialize the game
  */
 function initGame(bodyId, canvasId) {
+
+    players = [];
+    local_player = null;
+    next_player_id = 0;
+
     console.log('added event listener');
 
     canvas = document.getElementById(canvasId);
@@ -140,7 +153,7 @@ function initGame(bodyId, canvasId) {
     resizeCanvas();
 
     window.addEventListener('resize', function (event) {
-        //console.log("on resize");
+        //console.log('on resize');
         resizeCanvas();
     });
 
@@ -149,56 +162,64 @@ function initGame(bodyId, canvasId) {
     newBall();
     players.push(player);
 
-    //If the player is the first, draw game but don't attach listeners to wait until
+    //If the player is the only, draw game but don't attach listeners to wait until
     //another player connects.
-    //if (!first) {
-        //Mouse move event causing a lot of paddle rubberbanding issues for me
-        window.addEventListener('mousemove', function(event) {
+    window.addEventListener('mousemove', function (event) {
+        if (!only) {
             movePaddle(event.offsetX, event.offsetY);
-        });
+        }
+    });
 
-        window.addEventListener('touchstart', function (event) {
+    window.addEventListener('touchstart', function (event) {
+        if (!only) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
             movePaddle(touch.pageX, touch.pageY);
-        });
+        }
+    });
 
-        window.addEventListener('touchmove', function (event) {
+    window.addEventListener('touchmove', function (event) {
+        if (!only) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
             movePaddle(touch.pageX, touch.pageY);
-        });
+        }
+    });
 
-        window.addEventListener('keydown', function (event) {
+    window.addEventListener('keydown', function (event) {
+        if (!only) {
             if (event.keyCode == KEY_LEFT) {
                 local_player.paddle.moveLeft();
-                socket.emit("move-left", {player: local_player.id});
+                socket.emit('move-left', {
+                    player: local_player.id
+                });
             } else if (event.keyCode == KEY_RIGHT) {
                 local_player.paddle.moveRight();
-                socket.emit("move-right", {player: local_player.id});
+                socket.emit('move-right', {
+                    player: local_player.id
+                });
             } else if (event.keyCode == KEY_SPACE) {
                 local_player.paddle.releaseBall();
                 event.preventDefault();
             } else {
                 console.log(event.keyCode);
             }
-        });
+        }
+    });
 
-        window.addEventListener('keyup', function (event) {
-            if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
-                local_player.paddle.stop();
-            }
-        });
-    //} else {
-        //overlay something over the canvas to indicate that client is waiting for opponent
-    //}
+    window.addEventListener('keyup', function (event) {
+        if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
+            local_player.paddle.stop();
+        }
+    });
+
     // add bricks
     var num_bricks = Math.floor(canvas.width / BRICK_WIDTH);
     var x_offset = (canvas.width - num_bricks * BRICK_WIDTH) / 2;
     var y = 10;
-    console.log("Made " + num_bricks + " bricks");
+    console.log('Made ' + num_bricks + ' bricks');
     for (var j = 0; j < 5; ++j) {
         for (var i = 0; i < num_bricks; ++i) {
             var b = new Brick(x_offset + i * BRICK_WIDTH, y);
-            //console.log("Added brick to (" + i + ", 100");
+            //console.log('Added brick to (' + i + ', 100');
             // special blocks
             if (i == 0 || i == num_bricks - 1) {
                 b.color = 'gold';
@@ -225,32 +246,36 @@ function toggleFullscreen() {
 
     if (!doc.fullscreenElement && !doc.mozFullScreenElement && !doc.webkitFullscreenElement && !doc.msFullscreenElement) {
         requestFullScreen.call(docEl);
-        img.src = "images/return_from_full_screen.png";
-        img.alt = "Return from full screen";
+        img.src = 'images/return_from_full_screen.png';
+        img.alt = 'Return from full screen';
     } else {
         cancelFullScreen.call(doc);
-        img.src = "images/full_screen.png";
-        img.alt = "Go full screen";
+        img.src = 'images/full_screen.png';
+        img.alt = 'Go full screen';
     }
 }
 
 function setup() {
     socket = io.connect();
-    initGame('body', 'game-canvas');
-    socket.on('first', function (msg) {
-        console.log(msg.message);
-        console.log(msg.first);
+    socket.on('player-join', function (msg) {
         console.log(msg);
+        only = msg.only;
+        initGame('body', 'game-canvas');
         local_player.id = msg.playerId;
-        first = msg.first;
     });
 
-    socket.on('move-left', function(data) {
-        console.log("Player moved left", data);
+    socket.on('move-left', function (data) {
+        console.log('Player moved left', data);
     });
 
-    socket.on('move-right', function(data) {
-        console.log("Player moved right", data);
+    socket.on('move-right', function (data) {
+        console.log('Player moved right', data);
+    });
+
+    socket.on('player-leave', function (msg) {
+        console.log(msg);
+        only = msg.only;
+        initGame('body', 'game-canvas');
     });
 
 }

@@ -20,9 +20,10 @@ app.get('/', function (req, res) {
 io.on('connection', function (socket) {
     console.log('a user connected');
     //Initialize the game on the server
-    game.initGame(io,socket);
+    game.onConnect(io,socket);
     socket.on('disconnect',function(){
         console.log('a user disconnected');
+        game.onDisconnect();
     });
 });
 
