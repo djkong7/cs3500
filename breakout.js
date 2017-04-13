@@ -24,6 +24,8 @@ var next_player_id = 0;
 
 var only = false;
 var socket = null;
+var sentLeft = false;
+var sentRight = false;
 
 function Player(id, name) {
     this.id = id;
@@ -152,11 +154,11 @@ function addBricks(player, isLocal) {
     } else {
         y = canvas.height / 2 - BRICK_ROWS * BRICK_HEIGHT - 10;
     }
-    console.log("Made " + num_bricks + " bricks");
+    //console.log("Made " + num_bricks + " bricks");
     for (var j = 0; j < BRICK_ROWS; ++j) {
         for (var i = 0; i < num_bricks; ++i) {
             var b = new Brick(x_offset + i * BRICK_WIDTH, y);
-            //console.log("Added brick to (" + i + ", 100");
+            ////console.log("Added brick to (" + i + ", 100");
             // special blocks
             if (i == 0 || i == num_bricks - 1) {
                 b.color = 'gold';
@@ -170,14 +172,14 @@ function addBricks(player, isLocal) {
 /** Initialize the game
  */
 function initGame(bodyId, canvasId) {
-    console.log('added event listener');
+    //console.log('added event listener');
 
     canvas = document.getElementById(canvasId);
     c = canvas.getContext('2d');
     resizeCanvas();
 
     window.addEventListener('resize', function (event) {
-        //console.log('on resize');
+        ////console.log('on resize');
         resizeCanvas();
     });
 
@@ -221,24 +223,32 @@ function initGame(bodyId, canvasId) {
         if (!only) {
             if (event.keyCode == KEY_LEFT) {
                 local_player.paddle.moveLeft();
-                socket.emit('move-left', {
-                    player: local_player.id
-                });
+                if(!sentLeft){
+                    socket.emit('move-left', {
+                        player: local_player.id
+                    });
+                    sentLeft = true;
+                }
             } else if (event.keyCode == KEY_RIGHT) {
                 local_player.paddle.moveRight();
-                socket.emit('move-right', {
-                    player: local_player.id
-                });
+                if(!sentRight){
+                    socket.emit('move-right', {
+                        player: local_player.id
+                    });
+                    sentRight = true;
+                }
             } else if (event.keyCode == KEY_SPACE) {
                 local_player.paddle.releaseBall();
                 event.preventDefault();
             } else {
-                console.log(event.keyCode);
+                //console.log(event.keyCode);
             }
         }
     });
 
         window.addEventListener('keyup', function (event) {
+            sentLeft = false;
+            sentRight = false;
             if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
                 local_player.paddle.stop();
                 socket.emit("stop", {player: local_player.id});
@@ -277,19 +287,19 @@ function setup() {
     initGame('body', 'game-canvas');
     
     socket.on('player-join', function (msg) {
-        console.log(msg);
+        //console.log(msg);
         only = msg.only;
         if(msg.playerId){
             local_player.id = msg.playerId;
         }
-        console.log(local_player);
+        //console.log(local_player);
     });
 
 
     
 
     socket.on('player-leave', function (msg) {
-        console.log(msg);
+        //console.log(msg);
         only = msg.only;
         //initGame('body', 'game-canvas');
     });
@@ -298,14 +308,14 @@ function setup() {
         if (data.player != local_player.id) {
             other_player.paddle.moveLeft();
         }
-        console.log("Player moved left", data);
+        //console.log("Player moved left", data);
     });
 
     socket.on('move-right', function(data) {
         if (data.player != local_player.id) {
             other_player.paddle.moveRight();
         }
-        console.log("Player moved right", data);
+        //console.log("Player moved right", data);
 
     });
 
@@ -313,7 +323,7 @@ function setup() {
         if (data.player != local_player.id) {
             other_player.paddle.stop();
         }
-        console.log("Player stopped", data);
+        //console.log("Player stopped", data);
     });
 
 }
