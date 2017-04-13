@@ -1,5 +1,6 @@
 var BRICK_WIDTH = 50;
 var BRICK_HEIGHT = 20;
+var BRICK_ROWS = 5;
 var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
 var PADDLE_SPEED = 7;
@@ -59,8 +60,10 @@ function drawCanvas(now) {
         // handle collisions
         balls.forEach(function (ball) {
             if (!ball.attachedPaddle) {
-                collideBallAndPlayerBricks(ball, player, bricks);
-                collideBallAndPlayerPaddle(ball, paddle);
+                for (var j = 0; j < players.length; ++j) {
+                    collideBallAndPlayerBricks(ball, player, players[j].bricks);
+                    collideBallAndPlayerPaddle(ball, players[j].paddle);
+                }
                 hit_bottom = collideBallAndScreen(ball, player == local_player);
             }
             if (hit_bottom) {
@@ -71,7 +74,7 @@ function drawCanvas(now) {
                 player.score += SCORE_BALL_LOST;
 
                 // new ball for player
-                newBall();
+                newBall(player);
             } else {
                 ball.update();
                 ball.draw(c);
@@ -102,11 +105,11 @@ function resizeCanvas() {
 
 /** Create a ball and attach it to the local players paddle
  */
-function newBall() {
+function newBall(player) {
     var ball = new Ball(0, 0, BALL_SPEED, 6, 'green');
-    local_player.paddle.attachBall(ball);
+    player.paddle.attachBall(ball);
 
-    local_player.balls.push(ball);
+    player.balls.push(ball);
 }
 
 /** Create a player and return it
@@ -130,6 +133,31 @@ function movePaddle(x, y) {
     local_player.paddle.targetX = x - PADDLE_WIDTH / 2;
 }
 
+function addBricks(player, isLocal) {
+    // add bricks
+    var num_bricks = Math.floor(canvas.width / BRICK_WIDTH);
+    var x_offset = (canvas.width - num_bricks * BRICK_WIDTH) / 2;
+    var y;
+    if (isLocal) {
+        y = canvas.height / 2 + 10;
+    } else {
+        y = canvas.height / 2 - BRICK_ROWS * BRICK_HEIGHT - 10;
+    }
+    console.log("Made " + num_bricks + " bricks");
+    for (var j = 0; j < BRICK_ROWS; ++j) {
+        for (var i = 0; i < num_bricks; ++i) {
+            var b = new Brick(x_offset + i * BRICK_WIDTH, y);
+            //console.log("Added brick to (" + i + ", 100");
+            // special blocks
+            if (i == 0 || i == num_bricks - 1) {
+                b.color = 'gold';
+            }
+            player.bricks.push(b);
+        }
+        y += BRICK_HEIGHT;
+    }
+}
+
 /** Initialize the game
  */
 function initGame(bodyId, canvasId) {
@@ -146,8 +174,15 @@ function initGame(bodyId, canvasId) {
 
     var player = createPlayer();
     local_player = player;
-    newBall();
+    newBall(player);
+    addBricks(player, true);
     players.push(player);
+
+    var player2 = createPlayer();
+    player2.paddle.y = 50;
+    newBall(player2);
+    addBricks(player2, false);
+    players.push(player2);
 
     //If the player is the first, draw game but don't attach listeners to wait until
     //another player connects.
@@ -190,23 +225,6 @@ function initGame(bodyId, canvasId) {
     //} else {
         //overlay something over the canvas to indicate that client is waiting for opponent
     //}
-    // add bricks
-    var num_bricks = Math.floor(canvas.width / BRICK_WIDTH);
-    var x_offset = (canvas.width - num_bricks * BRICK_WIDTH) / 2;
-    var y = 10;
-    console.log("Made " + num_bricks + " bricks");
-    for (var j = 0; j < 5; ++j) {
-        for (var i = 0; i < num_bricks; ++i) {
-            var b = new Brick(x_offset + i * BRICK_WIDTH, y);
-            //console.log("Added brick to (" + i + ", 100");
-            // special blocks
-            if (i == 0 || i == num_bricks - 1) {
-                b.color = 'gold';
-            }
-            player.bricks.push(b);
-        }
-        y += BRICK_HEIGHT;
-    }
     //bricks.push(new Brick(10,10))
     drawCanvas();
 }
