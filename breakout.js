@@ -286,6 +286,8 @@ function setup() {
     
     initGame('body', 'game-canvas');
     
+    socket.emit('joinRoom');
+    
     socket.on('player-join', function (msg) {
         //console.log(msg);
         only = msg.only;
