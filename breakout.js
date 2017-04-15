@@ -188,7 +188,7 @@ function initGame(bodyId, canvasId) {
         newBall(local_player);
         addBricks(local_player, true);
         players.push(local_player);
-        
+
         other_player = createPlayer();
         other_player.paddle.y = 50;
         newBall(other_player);
@@ -281,11 +281,13 @@ function toggleFullscreen() {
     }
 }
 
-function setup() {
-    socket = io.connect();
-    
+function setup(folder) {
+    if (!folder) folder = '';
+    console.log("folder: " + folder);
+    socket = io.connect('/', {path: folder + '/socket.io'});
+
     initGame('body', 'game-canvas');
-    
+
     socket.on('player-join', function (msg) {
         //console.log(msg);
         only = msg.only;
@@ -296,7 +298,7 @@ function setup() {
     });
 
 
-    
+
 
     socket.on('player-leave', function (msg) {
         //console.log(msg);
