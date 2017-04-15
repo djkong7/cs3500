@@ -19,7 +19,7 @@
     <canvas id="game-canvas">Canvas not supported :(</canvas>
     <script type="text/javascript">
         var folder = location.pathname;
-        if (folder == '/') folder = '';
+        folder = folder.slice(0, -1);
         console.log(folder);
         setup(folder);
     </script>
