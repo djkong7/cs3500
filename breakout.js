@@ -281,10 +281,8 @@ function toggleFullscreen() {
     }
 }
 
-function setup(folder) {
-    if (!folder) folder = '';
-    console.log("folder: " + folder);
-    socket = io.connect('/', {path: folder + '/socket.io'});
+function setup() {
+    socket = io.connect('/');
 
     initGame('body', 'game-canvas');
 

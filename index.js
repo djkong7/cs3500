@@ -2,7 +2,7 @@
 
 var express = require('express'); // Create an Express variable
 var app = express(); // Create a new Express application
-var server = require('http').Server(app); // Create an http server with Node's HTTP module. 
+var server = require('http').Server(app); // Create an http server with Node's HTTP module.
 var io = require('socket.io').listen(server); // Instantiate Socket.IO hand have it listen on the Express/HTTP server
 var port = process.env.PORT || 3000;
 var game = require('./breakoutServer');
@@ -18,7 +18,7 @@ app.get('/', function (req, res) {
 
 // Executes when a client connects
 io.on('connection', function (socket) {
-    console.log('a user connected');
+    console.log('a user connected: ' + socket.request.connection.remoteAddress);
     //Initialize the game on the server
     game.onConnect(io,socket);
     socket.on('disconnect',function(){
