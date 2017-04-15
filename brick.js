@@ -3,7 +3,7 @@ function Brick(x, y) {
     this.y = y;
     this.width = BRICK_WIDTH;
     this.height = BRICK_HEIGHT;
-    this.color = 'green';
+    this.color = 'red';
 }
 
 /** Draw the brick
