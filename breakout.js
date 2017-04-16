@@ -294,7 +294,7 @@ function toggleFullscreen() {
 }
 
 function setup() {
-    socket = io.connect();
+    socket = io.connect('/');
 
     //Initialize the game
     initGame('body', 'game-canvas');
@@ -311,7 +311,6 @@ function setup() {
             roomId: roomId
         });
     });
-
 
     socket.on('player-join', function (msg) {
         console.log(msg);
