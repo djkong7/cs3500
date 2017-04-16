@@ -20,6 +20,7 @@ var players = [];
 var local_player = null;
 var other_player = null;
 var clickTimeout = null;
+var frame = 0;
 
 var roomId = 0;
 var roomSpeed = 0;
@@ -36,6 +37,18 @@ function Player(id, name) {
     this.bricks = null;
     this.balls = null;
     this.score = 0;
+    this.nextBallId = 0;
+}
+
+function removeBallAndUpdateScore(player, ball) {
+    // remove ball from player
+    player.balls.splice(player.balls.indexOf(ball), 1);
+
+    // reduce score
+    player.score += SCORE_BALL_LOST;
+
+    // new ball for player
+    newBall(player);
 }
 
 /** Draw the canvas and do game logic
@@ -82,18 +95,35 @@ function drawCanvas(now) {
                 hitPlayerSide = collideBallAndScreen(ball, player == local_player);
             }
             if (hitPlayerSide) {
-                // remove ball from player
-                player.balls.splice(player.balls.indexOf(ball), 1);
-
-                // reduce score
-                player.score += SCORE_BALL_LOST;
-
-                // new ball for player
-                newBall(player);
+                // if local, update other players that our ball was deleted
+                if (player == local_player) {
+                    removeBallAndUpdateScore(player, ball);
+                    socket.emit('update-ball', {
+                        roomId: roomId,
+                        ballId: ball.id,
+                        x: null,
+                        y: null,
+                    });
+                }
             } else {
                 ball.update();
                 ball.draw(c);
             }
+
+            if (!ball.attachedPaddle) {
+                if (frame % 5 == 0) {
+                    // send update for ball position
+                    socket.emit('update-ball', {
+                        roomId: roomId,
+                        ballId: ball.id,
+                        x: ball.x,
+                        y: ball.y,
+                        vx: ball.vx,
+                        vy: ball.vy,
+                    });
+                }
+            }
+
         });
 
         // draw bricks
@@ -125,6 +155,7 @@ function drawCanvas(now) {
         }
     }
 
+    frame++;
     raf = window.requestAnimationFrame(drawCanvas);
 }
 
@@ -151,7 +182,7 @@ function resizeCanvas() {
 /** Create a ball and attach it to the players paddle
  */
 function newBall(player) {
-    var ball = new Ball(0, 0, roomSpeed, 6, 'green');
+    var ball = new Ball(player.nextBallId++, 0, 0, roomSpeed, 6, 'green');
     player.paddle.attachBall(ball, player == local_player);
 
     player.balls.push(ball);
@@ -464,6 +495,31 @@ function setup() {
         if (data.playerId != local_player.id) {
             other_player.paddle.releaseBall();
             console.log("Player released ball ", data);
+        }
+    });
+
+    socket.on('update-ball', function(data) {
+        if (data.playerId != local_player.id) {
+            var ball = null;
+            for (var i = 0; i < other_player.balls.length; ++i) {
+                if (other_player.balls[i].id == data.ballId) {
+                    ball = other_player.balls[i];
+                    break;
+                }
+            }
+            if (ball) {
+                if (data.x == null || data.y == null) {
+                    // ball was deleted
+                    removeBallAndUpdateScore(other_player, ball);
+                } else {
+                    // update ball
+                    // TODO: this info is slightly behind!
+                    ball.x = data.x + data.vx
+                    ball.y = canvas.gameHeight - data.y - data.vy
+                    ball.vx = data.vx
+                    ball.vy = -data.vy
+                }
+            }
         }
     });
 

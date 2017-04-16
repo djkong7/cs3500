@@ -1,4 +1,5 @@
-function Ball(x, y, speed, r, c) {
+function Ball(id, x, y, speed, r, c) {
+    this.id = id;
     this.x = x;
     this.y = y;
     this.vx = 0;

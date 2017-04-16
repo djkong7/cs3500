@@ -12,16 +12,19 @@ exports.onConnect = function (sio, ssocket) {
     io = sio;
     socket = ssocket;
 
-    //Player setup
+    // Player setup
     socket.on('room-join', roomJoin);
     socket.on('room-status', roomStatus);
 
-    //Paddle controls
+    // Paddle controls
     socket.on('move-paddle', movePaddle);
     socket.on('move-left', moveLeft);
     socket.on('move-right', moveRight);
     socket.on('move-stop', moveStop);
     socket.on('release-ball', releaseBall);
+
+    // Position update
+    socket.on('update-ball', updateBall);
 
     console.log("hooked up events");
 };
@@ -167,6 +170,12 @@ function releaseBall(data) {
     data.playerId = this.nickname;
 
     io.sockets.in(data.roomId).emit('release-ball', data);
+}
+
+function updateBall(data) {
+    data.playerId = this.nickname;
+
+    io.sockets.in(data.roomId).emit('update-ball', data);
 }
 
 
