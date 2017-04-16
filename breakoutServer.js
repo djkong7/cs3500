@@ -1,3 +1,5 @@
+var MAX_WIDTH = 700;
+
 var io;
 var socket;
 var playerId = 0;
@@ -68,6 +70,9 @@ function roomJoin(data) {
     if (room.h == 0 || data.h < room.h) {
         room.h = data.h;
     }
+
+    // have max width
+    if (room.w > MAX_WIDTH) room.w = MAX_WIDTH;
 
     // update room speed
     room.speed = Math.floor(room.h / 100);
