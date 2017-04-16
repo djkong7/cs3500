@@ -20,7 +20,7 @@ var c = null;
 var players = [];
 var local_player = null;
 var other_player = null;
-var next_player_id = 0;
+var clickTimeout = null;
 
 var roomId = 0;
 var only = false;
@@ -160,7 +160,7 @@ function newBall(player) {
 /** Create a player and return it
  */
 function createPlayer() {
-    var player = new Player(next_player_id++, 'Steven');
+    var player = new Player(-1, 'Steven');
     player.paddle = new Paddle(
         -100,
         -100,
@@ -177,7 +177,6 @@ function createPlayer() {
 function movePaddle(player, x, y) {
     if (player == local_player) {
         x -= canvas.offX;
-        //console.log("Adjusting x by " + canvas.offX);
     }
     player.paddle.targetX = x - PADDLE_WIDTH / 2;
 
@@ -271,7 +270,23 @@ function initGame(w, h) {
     window.addEventListener('touchstart', function (event) {
         if (!only) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
-            movePaddle(local_player, touch.pageX, touch.pageY);
+            var x = touch.pageX;
+            var y = touch.pageY;
+
+            if (clickTimeout == null) {
+                clickTimeout = setTimeout(function () {
+                    // single click
+                    clickTimeout = null;
+                    movePaddle(local_player, x, y);
+                }, 500);
+            } else {
+                clearTimeout(clickTimeout);
+                // double click
+                local_player.paddle.releaseBall();
+                socket.emit('release-ball', {
+                    roomId: roomId
+                });
+            }
         }
     });
 
