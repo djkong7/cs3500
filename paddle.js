@@ -51,7 +51,7 @@ Paddle.prototype.update = function() {
     this.y += this.vy;
 
     if (this.x < 0 ) this.x = 0;
-    if (this.x > canvas.width - this.width) this.x = canvas.width - this.width;
+    if (this.x > canvas.gameWidth - this.width) this.x = canvas.gameWidth - this.width;
 }
 
 /** Set the paddle to move left at a constant speed

@@ -3,8 +3,6 @@ var socket;
 var playerId = 0;
 var roomId = 0;
 var rooms = [];
-var joined = false;
-var joinedRoomId = 0;
 var nextRoomId = 0;
 
 /**
@@ -31,40 +29,45 @@ exports.onConnect = function (sio, ssocket) {
 /**
  *
  */
-function roomJoin() {
+function roomJoin(data) {
     //Give the socket a nickname
-    this.nickname = playerId;
-    playerId++;
+    this.nickname = playerId++;
 
-    joined = false;
+    var room = null;
 
     //Check each room to see if it has none or one player
     //If it does, join that room
     for (var i = 0; i < rooms.length; i++) {
         if (rooms[i].numPlayers === 1 || rooms[i].numPlayers === 0) {
-            rooms[i].join(this);
-            joinedRoomId = rooms[i].roomId;
-            joined = true;
+            room = rooms[i];
+            room.join(this);
             break;
         }
     }
 
     //Create a new room and join it if there were no open rooms
-    if (joined === false) {
-        var room = new Room(nextRoomId++);
+    if (room === null) {
+        room = new Room(nextRoomId++);
         room.join(this);
-        joinedRoomId = room.roomId;
         rooms.push(room);
         console.log("Created new room");
     } else {
         console.log("Found old room");
     }
 
-    console.log('Player ' + playerId + ' has joined room ' + joinedRoomId + ' (Total rooms: ' + rooms.length + ')');
+    console.log('Player ' + playerId + ' has joined room ' + room.roomId + ' (Total rooms: ' + rooms.length + ')');
+
+    // set screen constraints
+    if (room.w == 0 || data.w < room.w) {
+        room.w = data.w;
+    }
+    if (room.h == 0 || data.h < room.h) {
+        room.h = data.h;
+    }
 
     //Send the roomid to only the new client
     io.to(this.id).emit('room-id', {
-        roomId: joinedRoomId,
+        roomId: room.roomId,
         playerId: this.nickname,
     });
 };
@@ -88,6 +91,8 @@ function roomStatus(data) {
                     only: false,
                     player1Id: rooms[i].players[0],
                     player2Id: rooms[i].players[1],
+                    w: rooms[i].w,
+                    h: rooms[i].h,
                 });
             }
         }
@@ -152,7 +157,7 @@ function moveStop(data) {
 };
 
 function releaseBall(data) {
-    console.log('Player released ball', data);
+    //console.log('Player released ball', data);
 
     data.playerId = this.nickname;
 
@@ -164,6 +169,8 @@ function Room(roomId) {
     this.roomId = roomId.toString();
     this.numPlayers = 0;
     this.players = [];
+    this.w = 0;
+    this.h = 0;
 };
 
 /**

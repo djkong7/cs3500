@@ -8,17 +8,17 @@
 function collideBallAndScreen(ball, is_local) {
     var hitPlayerSide = false;
     //Edge of scrren
-    if (ball.y > canvas.height - ball.radius || ball.y < ball.radius) {
+    if (ball.y > canvas.gameHeight - ball.radius || ball.y < ball.radius) {
         ball.vy = -ball.vy;
     }
-    if (ball.x > canvas.width - ball.radius || ball.x < ball.radius) {
+    if (ball.x > canvas.gameWidth - ball.radius || ball.x < ball.radius) {
         ball.vx = -ball.vx;
     }
 
     // if this is a local player ball, return true if hit bottom of screen
-    // otherwise hit true if hit top of screen
+    // otherwise return true if hit top of screen
     if (is_local) {
-        if (ball.y >= canvas.height - ball.radius) {
+        if (ball.y >= canvas.gameHeight - ball.radius) {
             hitPlayerSide = true;
         }
     } else {

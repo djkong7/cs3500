@@ -43,6 +43,8 @@ function Player(id, name) {
 function drawCanvas(now) {
     var w = canvas.width;
     var h = canvas.height;
+    var gw = canvas.gameWidth;
+    var gh = canvas.gameHeight;
     var bricks = null;
     var balls = null;
     var hitPlayerSide = false;
@@ -51,6 +53,15 @@ function drawCanvas(now) {
     c.fillStyle = '#EEE';
 
     c.fillRect(0, 0, w, h); // clears
+
+    // draw everything at an offset
+    c.save();
+    c.translate(canvas.offX, canvas.offY);
+
+    // draw game region border
+    c.strokeStyle = 'green';
+    c.rect(0, 0, gw, gh);
+    c.stroke();
 
     for (var i = 0; i < players.length; ++i) {
         player = players[i];
@@ -62,6 +73,7 @@ function drawCanvas(now) {
 
         // handle collisions
         balls.forEach(function (ball) {
+            hitPlayerSide = false;
             if (!ball.attachedPaddle) {
                 for (var j = 0; j < players.length; ++j) {
                     collideBallAndPlayerBricks(ball, player, players[j].bricks);
@@ -95,6 +107,9 @@ function drawCanvas(now) {
         paddle.draw(c);
     }
 
+    // restore offset translation
+    c.restore();
+
     if (only) {
         c.fillStyle = 'rgba(10,10,10,.8)';
         c.fillRect(0, 0, w, h);
@@ -113,12 +128,24 @@ function drawCanvas(now) {
     raf = window.requestAnimationFrame(drawCanvas);
 }
 
+function getCanvasSize() {
+    var borderSize = 2;
+    var w = window.innerWidth - borderSize;
+    var h = window.innerHeight - borderSize;
+    return {w: w, h: h};
+}
+
+
 /** Resize the canvas to the window size
  */
 function resizeCanvas() {
-    var borderSize = 2;
-    canvas.width = window.innerWidth - borderSize;
-    canvas.height = window.innerHeight - borderSize;
+    var size = getCanvasSize();
+    canvas.width = size.w;
+    canvas.height = size.h;
+
+    // set canvas offsets (to center image)
+    canvas.offX = canvas.width / 2 - canvas.gameWidth / 2;
+    canvas.offY = canvas.height / 2 - canvas.gameHeight / 2;
 }
 
 /** Create a ball and attach it to the players paddle
@@ -135,8 +162,8 @@ function newBall(player) {
 function createPlayer() {
     var player = new Player(next_player_id++, 'Steven');
     player.paddle = new Paddle(
-        canvas.width / 2 - PADDLE_WIDTH / 2,
-        canvas.height - PADDLE_HEIGHT - 50,
+        -100,
+        -100,
         0, 0);
 
     player.balls = [];
@@ -148,6 +175,10 @@ function createPlayer() {
 /** Move the players paddle towards the given coords
  */
 function movePaddle(player, x, y) {
+    if (player == local_player) {
+        x -= canvas.offX;
+        //console.log("Adjusting x by " + canvas.offX);
+    }
     player.paddle.targetX = x - PADDLE_WIDTH / 2;
 
     // tell others we are moving
@@ -162,15 +193,15 @@ function movePaddle(player, x, y) {
 
 function addBricks(player, isLocal) {
     // add bricks
-    var num_bricks = Math.floor(canvas.width / BRICK_WIDTH);
-    var x_offset = (canvas.width - num_bricks * BRICK_WIDTH) / 2;
+    var num_bricks = Math.floor(canvas.gameWidth / BRICK_WIDTH);
+    var x_offset = (canvas.gameWidth - num_bricks * BRICK_WIDTH) / 2;
     var y;
     if (isLocal) {
-        y = canvas.height / 2 + 10;
+        y = canvas.gameHeight / 2 + 10;
     } else {
-        y = canvas.height / 2 - BRICK_ROWS * BRICK_HEIGHT - 10;
+        y = canvas.gameHeight / 2 - BRICK_ROWS * BRICK_HEIGHT - 10;
     }
-    console.log("Made " + num_bricks + " bricks");
+
     for (var j = 0; j < BRICK_ROWS; ++j) {
         for (var i = 0; i < num_bricks; ++i) {
             var b = new Brick(x_offset + i * BRICK_WIDTH, y);
@@ -185,33 +216,49 @@ function addBricks(player, isLocal) {
     }
 }
 
-/** Initialize the game
- */
-function initGame(bodyId, canvasId) {
-    console.log('added event listener');
-
+function initPlayersAndCanvas(canvasId) {
     canvas = document.getElementById(canvasId);
     c = canvas.getContext('2d');
     resizeCanvas();
+
+    local_player = createPlayer();
+    newBall(local_player);
+    players.push(local_player);
+
+    other_player = createPlayer();
+    newBall(other_player);
+    players.push(other_player);
+
+    drawCanvas();
+}
+
+/** Initialize the game
+ */
+function initGame(w, h) {
+    console.log('adding event listeners');
+
+    // set canvas size
+    canvas.gameWidth = w;
+    canvas.gameHeight = h;
+
+    resizeCanvas();
+
+    // set paddle positions
+    local_player.paddle.x = canvas.gameWidth / 2 - PADDLE_WIDTH / 2;
+    other_player.paddle.x = canvas.gameWidth / 2 - PADDLE_WIDTH / 2;
+    local_player.paddle.y = canvas.gameHeight - PADDLE_HEIGHT - 50;
+    other_player.paddle.y = 50;
+
+    // add bricks now
+    addBricks(local_player, true);
+    addBricks(other_player, false);
+
+    // add event listeners for canvas
 
     window.addEventListener('resize', function (event) {
         //console.log('on resize');
         resizeCanvas();
     });
-
-    if (local_player === null) {
-        local_player = createPlayer();
-        newBall(local_player);
-        addBricks(local_player, true);
-        players.push(local_player);
-
-        other_player = createPlayer();
-        other_player.paddle.y = 50;
-        newBall(other_player);
-        addBricks(other_player, false);
-        players.push(other_player);
-    }
-
 
     //If the player is the only, draw game but don't attach listeners to wait until
     //another player connects.
@@ -278,8 +325,6 @@ function initGame(bodyId, canvasId) {
             });
         }
     });
-
-    drawCanvas();
 }
 
 /** Toggle fullscreen for the canvas
@@ -315,16 +360,21 @@ function setup() {
         only = true;
     });
 
-    //Initialize the game
-    initGame('body', 'game-canvas');
+    // Initialize the players
+    initPlayersAndCanvas('game-canvas');
+
+    var size = getCanvasSize();
 
     //Request to join a room
-    socket.emit('room-join');
+    socket.emit('room-join', {
+        w: size.w,
+        h: size.h,
+    });
 
     //Gets the roomId from the server and stores it
     //Requests the status of the room
     socket.on('room-id', function (msg) {
-        console.log(msg.roomId);
+        console.log(msg);
         roomId = msg.roomId;
         local_player.id = msg.playerId;
         console.log("New player id is: " + msg.playerId);
@@ -338,12 +388,18 @@ function setup() {
         console.log(msg);
         only = msg.only;
         disconnect = false;
-        if (local_player.id == msg.player1Id) {
-            other_player.id = msg.player2Id;
-        } else {
-            other_player.id = msg.player1Id;
+
+        if (!only) {
+            if (local_player.id == msg.player1Id) {
+                other_player.id = msg.player2Id;
+            } else {
+                other_player.id = msg.player1Id;
+            }
+            console.log("Other player id: " + other_player.id);
+
+            //Initialize the game
+            initGame(msg.w, msg.h);
         }
-        console.log("Other player id: " + other_player.id);
     });
 
     socket.on('player-leave', function (msg) {
