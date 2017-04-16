@@ -61,6 +61,8 @@ function drawCanvas(now) {
     var bricks = null;
     var balls = null;
     var hitPlayerSide = false;
+    var collidedBricks = [];
+    var brickIndex = 0;
 
     c.strokeStyle = 'gray';
     c.fillStyle = '#EEE';
@@ -89,7 +91,20 @@ function drawCanvas(now) {
             hitPlayerSide = false;
             if (!ball.attachedPaddle) {
                 for (var j = 0; j < players.length; ++j) {
-                    collideBallAndPlayerBricks(ball, player, players[j].bricks);
+                    collidedBricks = collideBallAndPlayerBricks(ball, player, players[j].bricks);
+                    if (player == local_player) {
+                        for (var k = 0; k < collidedBricks.length; ++k) {
+                            brickIndex = players[j].bricks.indexOf(collidedBricks[k]);
+                            player.score += SCORE_BRICK_DESTROY;
+                            collidedBricks[k].valid = false;
+                            socket.emit('update-brick', {
+                                roomId: roomId,
+                                ownerId: players[j].id,
+                                index: brickIndex,
+                                valid: false,
+                            });
+                        }
+                    }
                     collideBallAndPlayerPaddle(ball, players[j].paddle);
                 }
                 hitPlayerSide = collideBallAndScreen(ball, player == local_player);
@@ -229,7 +244,7 @@ function addBricks(player, isLocal) {
     if (isLocal) {
         y = canvas.gameHeight / 2 + 10;
     } else {
-        y = canvas.gameHeight / 2 - BRICK_ROWS * BRICK_HEIGHT - 10;
+        y = canvas.gameHeight / 2 - BRICK_HEIGHT - 10;
     }
 
     for (var j = 0; j < BRICK_ROWS; ++j) {
@@ -242,7 +257,11 @@ function addBricks(player, isLocal) {
             }
             player.bricks.push(b);
         }
-        y += BRICK_HEIGHT;
+        if (isLocal) {
+            y += BRICK_HEIGHT;
+        } else {
+            y -= BRICK_HEIGHT;
+        }
     }
 }
 
@@ -519,6 +538,24 @@ function setup() {
                     ball.vx = data.vx
                     ball.vy = -data.vy
                 }
+            }
+        }
+    });
+
+    socket.on('update-brick', function(data) {
+        //console.log('update-brick', data);
+        if (data.playerId != local_player.id) {
+            var brick = null;
+            if (data.ownerId == other_player.id) {
+                brick = other_player.bricks[data.index];
+            } else if (data.ownerId == local_player.id) {
+                //console.log("one of our bricks was hit!");
+                brick = local_player.bricks[data.index];
+            }
+
+            if (brick) {
+                brick.valid = data.valid;
+                other_player.score += SCORE_BRICK_DESTROY;
             }
         }
     });

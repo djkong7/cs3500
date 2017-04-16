@@ -35,27 +35,30 @@ function collideBallAndScreen(ball, is_local) {
  * Ball ball     - the ball that is colliding
  * Player player - the player to be rewarded for breaking bricks
  * Brick brick   - bricks array for one player
+ *
+ * Returns array of collided bricks
  */
 function collideBallAndPlayerBricks(ball, player, bricks) {
     //Bricks
+    var collidedBricks = [];
     var yreverse = false;
     var xreverse = false;
     bricks.forEach(function (brick) {
-        //console.log(that);
-        if (brick.y <= ball.y + ball.radius && //top
-            brick.x + brick.width >= ball.x - ball.radius && //right
-            brick.y + brick.height >= ball.y - ball.radius && //bottom
-            brick.x <= ball.x + ball.radius //left
-        ) {
-            player.score += SCORE_BRICK_DESTROY;
-            bricks.splice(bricks.indexOf(brick), 1);
-            if (brick.y + brick.height < ball.y || brick.y > ball.y) {
-                yreverse = true;
-            }
-            if (brick.x + brick.width < ball.x || brick.x > ball.x) {
-                xreverse = true;
-            }
+        if (brick.valid) {
+            if (brick.y <= ball.y + ball.radius && //top
+                brick.x + brick.width >= ball.x - ball.radius && //right
+                brick.y + brick.height >= ball.y - ball.radius && //bottom
+                brick.x <= ball.x + ball.radius //left
+            ) {
+                collidedBricks.push(brick);
+                if (brick.y + brick.height < ball.y || brick.y > ball.y) {
+                    yreverse = true;
+                }
+                if (brick.x + brick.width < ball.x || brick.x > ball.x) {
+                    xreverse = true;
+                }
 
+            }
         }
     });
     if (xreverse) {
@@ -66,6 +69,8 @@ function collideBallAndPlayerBricks(ball, player, bricks) {
         ball.vy = -ball.vy;
     }
     //console.log(yFlag + ", " + xFlag);
+
+    return collidedBricks;
 }
 
 /** Have the ball bounce off a paddle

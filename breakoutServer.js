@@ -23,8 +23,9 @@ exports.onConnect = function (sio, ssocket) {
     socket.on('move-stop', moveStop);
     socket.on('release-ball', releaseBall);
 
-    // Position update
+    // Entity updates
     socket.on('update-ball', updateBall);
+    socket.on('update-brick', updateBrick);
 
     console.log("hooked up events");
 };
@@ -176,6 +177,12 @@ function updateBall(data) {
     data.playerId = this.nickname;
 
     io.sockets.in(data.roomId).emit('update-ball', data);
+}
+
+function updateBrick(data) {
+    data.playerId = this.nickname;
+
+    io.sockets.in(data.roomId).emit('update-brick', data);
 }
 
 
