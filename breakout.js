@@ -296,6 +296,13 @@ function toggleFullscreen() {
 function setup() {
     socket = io.connect('/');
 
+    socket.on('disconnect', function (msg) {
+        console.log("server disconnect: " + msg);
+        socket.disconnect();
+        disconnect = true;
+        only = true;
+    });
+
     //Initialize the game
     initGame('body', 'game-canvas');
 
@@ -307,6 +314,9 @@ function setup() {
     socket.on('room-id', function (msg) {
         console.log(msg.roomId);
         roomId = msg.roomId;
+        local_player.id = msg.playerId;
+        console.log("New player id is: " + msg.playerId);
+        console.log(local_player);
         socket.emit('room-status', {
             roomId: roomId
         });
@@ -315,17 +325,17 @@ function setup() {
     socket.on('player-join', function (msg) {
         console.log(msg);
         only = msg.only;
-        if (msg.playerId) {
-            local_player.id = msg.playerId;
-        }
         disconnect = false;
-        console.log(local_player);
     });
 
     socket.on('player-leave', function (msg) {
         console.log(msg);
         only = msg.only;
         disconnect = msg.disconnect;
+        if (disconnect) {
+            console.log("Disconnecting");
+            socket.disconnect();
+        }
     });
 
     socket.on('move-left', function (data) {

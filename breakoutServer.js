@@ -5,6 +5,7 @@ var roomId = 0;
 var rooms = [];
 var joined = false;
 var joinedRoomId = 0;
+var nextRoomId = 0;
 
 /**
  *
@@ -21,6 +22,8 @@ exports.onConnect = function (sio, ssocket) {
     socket.on('move-left', moveLeft);
     socket.on('move-right', moveRight);
     socket.on('move-stop', moveStop);
+
+    console.log("hooked up events");
 };
 
 /**
@@ -46,14 +49,21 @@ function roomJoin() {
 
     //Create a new room and join it if there were no open rooms
     if (joined === false) {
-        rooms.push(new Room(roomId));
-        rooms[(rooms.length - 1)].join(this);
-        joinedRoomId = rooms[(rooms.length - 1)].roomId;
-        roomId = (rooms.length);
+        var room = new Room(nextRoomId++);
+        room.join(this);
+        joinedRoomId = room.roomId;
+        rooms.push(room);
+        console.log("Created new room");
+    } else {
+        console.log("Found old room");
     }
+
+    console.log('Player ' + playerId + ' has joined room ' + joinedRoomId + ' (Total rooms: ' + rooms.length + ')');
+
     //Send the roomid to only the new client
     io.to(this.id).emit('room-id', {
-        roomId: joinedRoomId
+        roomId: joinedRoomId,
+        playerId: this.nickname,
     });
 };
 
@@ -64,14 +74,13 @@ function roomStatus(data) {
     for (var i = 0; i < rooms.length; i++) {
         if (data.roomId == rooms[i].roomId) {
             if (rooms[i].numPlayers === 1 || rooms[i].numPlayers === 0) {
-                //Let the player know that they are the only one
+                // Let the player know that they are the only one
                 io.sockets.in(data.roomId).emit('player-join', {
                     message: 'You are the only player',
                     only: true,
-                    playerId: playerId,
                 });
             } else {
-                //Send to everyone else that another player joined
+                // Let the player know that they have an opponent
                 io.sockets.in(data.roomId).emit('player-join', {
                     message: 'Another player joined',
                     only: false
@@ -87,6 +96,9 @@ function roomStatus(data) {
 exports.onDisconnect = function (sio, ssocket) {
     for (var i = 0; i < rooms.length; i++) {
         if (rooms[i].players[0] == ssocket.nickname || rooms[i].players[1] == ssocket.nickname) {
+
+            console.log('Players have left room ' + rooms[i].roomId);
+
             io.sockets.in(rooms[i].roomId).emit('player-leave', {
                 message: 'The other player left',
                 only: true,
