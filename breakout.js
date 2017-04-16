@@ -390,8 +390,8 @@ function initGame(w, h) {
         if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
             local_player.paddle.stop();
             socket.emit("move-stop", {
-                player: local_player.id,
-                roomId: roomId
+                x: local_player.paddle.x,
+                roomId: roomId,
             });
         }
     });
@@ -496,14 +496,14 @@ function setup() {
     });
 
     socket.on('move-left', function (data) {
-        if (data.player != local_player.id) {
+        if (data.playerId != local_player.id) {
             other_player.paddle.moveLeft();
         }
         console.log("Player moved left", data);
     });
 
     socket.on('move-right', function (data) {
-        if (data.player != local_player.id) {
+        if (data.playerId != local_player.id) {
             other_player.paddle.moveRight();
         }
         console.log("Player moved right", data);
@@ -511,8 +511,9 @@ function setup() {
     });
 
     socket.on('move-stop', function (data) {
-        if (data.player != local_player.id) {
+        if (data.playerId != local_player.id) {
             other_player.paddle.stop();
+            other_player.paddle.x = data.x;
         }
         console.log("Player stopped", data);
     });

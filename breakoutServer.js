@@ -136,6 +136,7 @@ exports.onDisconnect = function (sio, ssocket) {
 
 function movePaddle(data) {
     //console.log('Player ' + data.playerId + ' is moving paddle to ' + data.x);
+    data.playerId = this.nickname;
 
     io.sockets.in(data.roomId).emit('move-paddle', data);
 }
@@ -145,6 +146,7 @@ function movePaddle(data) {
  */
 function moveLeft(data) {
     console.log('Player moved left', data);
+    data.playerId = this.nickname;
 
     // send to other players
     io.sockets.in(data.roomId).emit('move-left', data);
@@ -155,6 +157,7 @@ function moveLeft(data) {
  */
 function moveRight(data) {
     console.log('Player moved right', data);
+    data.playerId = this.nickname;
 
     // send to other players
     io.sockets.in(data.roomId).emit('move-right', data);
@@ -165,6 +168,7 @@ function moveRight(data) {
  */
 function moveStop(data) {
     console.log('Player stopped', data);
+    data.playerId = this.nickname;
 
     // send to other players
     io.sockets.in(data.roomId).emit('move-stop', data);
@@ -172,7 +176,6 @@ function moveStop(data) {
 
 function releaseBall(data) {
     //console.log('Player released ball', data);
-
     data.playerId = this.nickname;
 
     io.sockets.in(data.roomId).emit('release-ball', data);
