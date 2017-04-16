@@ -145,10 +145,19 @@ function createPlayer() {
     return player;
 }
 
-/** Move the local players paddle towards the given coords
+/** Move the players paddle towards the given coords
  */
-function movePaddle(x, y) {
-    local_player.paddle.targetX = x - PADDLE_WIDTH / 2;
+function movePaddle(player, x, y) {
+    player.paddle.targetX = x - PADDLE_WIDTH / 2;
+
+    // tell others we are moving
+    if (player == local_player) {
+        socket.emit('move-paddle', {
+            playerId: local_player.id,
+            roomId: roomId,
+            x: x,
+        });
+    }
 }
 
 function addBricks(player, isLocal) {
@@ -208,21 +217,21 @@ function initGame(bodyId, canvasId) {
     //another player connects.
     window.addEventListener('mousemove', function (event) {
         if (!only) {
-            movePaddle(event.offsetX, event.offsetY);
+            movePaddle(local_player, event.offsetX, event.offsetY);
         }
     });
 
     window.addEventListener('touchstart', function (event) {
         if (!only) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
-            movePaddle(touch.pageX, touch.pageY);
+            movePaddle(local_player, touch.pageX, touch.pageY);
         }
     });
 
     window.addEventListener('touchmove', function (event) {
         if (!only) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
-            movePaddle(touch.pageX, touch.pageY);
+            movePaddle(local_player, touch.pageX, touch.pageY);
         }
     });
 
@@ -318,7 +327,7 @@ function setup() {
         console.log("New player id is: " + msg.playerId);
         console.log(local_player);
         socket.emit('room-status', {
-            roomId: roomId
+            roomId: roomId,
         });
     });
 
@@ -326,6 +335,12 @@ function setup() {
         console.log(msg);
         only = msg.only;
         disconnect = false;
+        if (local_player.id == msg.player1Id) {
+            other_player.id = msg.player2Id;
+        } else {
+            other_player.id = msg.player1Id;
+        }
+        console.log("Other player id: " + other_player.id);
     });
 
     socket.on('player-leave', function (msg) {
@@ -335,6 +350,13 @@ function setup() {
         if (disconnect) {
             console.log("Disconnecting");
             socket.disconnect();
+        }
+    });
+
+    socket.on('move-paddle', function(data) {
+        if (data.playerId == other_player.id) {
+            //console.log('Player ' + data.playerId + ' is moving paddle to ' + data.x);
+            movePaddle(other_player, data.x, 0);
         }
     });
 

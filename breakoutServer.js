@@ -19,6 +19,7 @@ exports.onConnect = function (sio, ssocket) {
     socket.on('room-status', roomStatus);
 
     //Paddle controls
+    socket.on('move-paddle', movePaddle);
     socket.on('move-left', moveLeft);
     socket.on('move-right', moveRight);
     socket.on('move-stop', moveStop);
@@ -83,7 +84,9 @@ function roomStatus(data) {
                 // Let the player know that they have an opponent
                 io.sockets.in(data.roomId).emit('player-join', {
                     message: 'Another player joined',
-                    only: false
+                    only: false,
+                    player1Id: rooms[i].players[0],
+                    player2Id: rooms[i].players[1],
                 });
             }
         }
@@ -110,6 +113,12 @@ exports.onDisconnect = function (sio, ssocket) {
         }
     }
 };
+
+function movePaddle(data) {
+    //console.log('Player ' + data.playerId + ' is moving paddle to ' + data.x);
+
+    io.sockets.in(data.roomId).emit('move-paddle', data);
+}
 
 /**
  *
