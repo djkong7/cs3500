@@ -4,7 +4,6 @@ var BRICK_ROWS = 5;
 var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
 var PADDLE_SPEED = 7;
-var BALL_SPEED = 7;
 var EDGE_COLOR = 'black';
 var KEY_SPACE = 32;
 var KEY_LEFT = 37;
@@ -23,6 +22,7 @@ var other_player = null;
 var clickTimeout = null;
 
 var roomId = 0;
+var roomSpeed = 0;
 var only = false;
 var disconnect = false;
 var socket = null;
@@ -151,7 +151,7 @@ function resizeCanvas() {
 /** Create a ball and attach it to the players paddle
  */
 function newBall(player) {
-    var ball = new Ball(0, 0, BALL_SPEED, 6, 'green');
+    var ball = new Ball(0, 0, roomSpeed, 6, 'green');
     player.paddle.attachBall(ball, player == local_player);
 
     player.balls.push(ball);
@@ -221,11 +221,9 @@ function initPlayersAndCanvas(canvasId) {
     resizeCanvas();
 
     local_player = createPlayer();
-    newBall(local_player);
     players.push(local_player);
 
     other_player = createPlayer();
-    newBall(other_player);
     players.push(other_player);
 
     drawCanvas();
@@ -241,6 +239,10 @@ function initGame(w, h) {
     canvas.gameHeight = h;
 
     resizeCanvas();
+
+    // create player balls
+    newBall(local_player);
+    newBall(other_player);
 
     // set paddle positions
     local_player.paddle.x = canvas.gameWidth / 2 - PADDLE_WIDTH / 2;
@@ -411,6 +413,8 @@ function setup() {
                 other_player.id = msg.player1Id;
             }
             console.log("Other player id: " + other_player.id);
+
+            roomSpeed = msg.speed;
 
             //Initialize the game
             initGame(msg.w, msg.h);

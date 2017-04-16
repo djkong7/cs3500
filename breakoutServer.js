@@ -65,6 +65,10 @@ function roomJoin(data) {
         room.h = data.h;
     }
 
+    // update room speed
+    room.speed = Math.floor(room.h / 100);
+    if (room.speed < 1) room.speed = 1;
+
     //Send the roomid to only the new client
     io.to(this.id).emit('room-id', {
         roomId: room.roomId,
@@ -93,6 +97,7 @@ function roomStatus(data) {
                     player2Id: rooms[i].players[1],
                     w: rooms[i].w,
                     h: rooms[i].h,
+                    speed: rooms[i].speed,
                 });
             }
         }
