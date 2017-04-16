@@ -22,7 +22,9 @@ var local_player = null;
 var other_player = null;
 var next_player_id = 0;
 
+var roomId = 0;
 var only = false;
+var disconnect = false;
 var socket = null;
 var sentLeft = false;
 var sentRight = false;
@@ -98,9 +100,14 @@ function drawCanvas(now) {
         c.fillRect(0, 0, w, h);
 
         c.fillStyle = 'white';
-        c.font = 'bold 4em sans-serif';
+        c.font = 'bold 2em sans-serif';
         c.textAlign = 'center';
-        c.fillText('Waiting for an opponent', w / 2, h / 2);
+        if (disconnect) {
+            c.fillText('Opponent disconnected', w / 2, h / 2 - 25);
+            c.fillText('Refresh for new opponent', w / 2, h / 2 + 25);
+        } else {
+            c.fillText('Waiting for an opponent', w / 2, h / 2);
+        }
     }
 
     raf = window.requestAnimationFrame(drawCanvas);
@@ -154,11 +161,11 @@ function addBricks(player, isLocal) {
     } else {
         y = canvas.height / 2 - BRICK_ROWS * BRICK_HEIGHT - 10;
     }
-    //console.log("Made " + num_bricks + " bricks");
+    console.log("Made " + num_bricks + " bricks");
     for (var j = 0; j < BRICK_ROWS; ++j) {
         for (var i = 0; i < num_bricks; ++i) {
             var b = new Brick(x_offset + i * BRICK_WIDTH, y);
-            ////console.log("Added brick to (" + i + ", 100");
+            //console.log("Added brick to (" + i + ", 100");
             // special blocks
             if (i == 0 || i == num_bricks - 1) {
                 b.color = 'gold';
@@ -172,18 +179,18 @@ function addBricks(player, isLocal) {
 /** Initialize the game
  */
 function initGame(bodyId, canvasId) {
-    //console.log('added event listener');
+    console.log('added event listener');
 
     canvas = document.getElementById(canvasId);
     c = canvas.getContext('2d');
     resizeCanvas();
 
     window.addEventListener('resize', function (event) {
-        ////console.log('on resize');
+        //console.log('on resize');
         resizeCanvas();
     });
 
-    if(local_player === null){
+    if (local_player === null) {
         local_player = createPlayer();
         newBall(local_player);
         addBricks(local_player, true);
@@ -223,17 +230,19 @@ function initGame(bodyId, canvasId) {
         if (!only) {
             if (event.keyCode == KEY_LEFT) {
                 local_player.paddle.moveLeft();
-                if(!sentLeft){
+                if (!sentLeft) {
                     socket.emit('move-left', {
-                        player: local_player.id
+                        player: local_player.id,
+                        roomId: roomId
                     });
                     sentLeft = true;
                 }
             } else if (event.keyCode == KEY_RIGHT) {
                 local_player.paddle.moveRight();
-                if(!sentRight){
+                if (!sentRight) {
                     socket.emit('move-right', {
-                        player: local_player.id
+                        player: local_player.id,
+                        roomId: roomId
                     });
                     sentRight = true;
                 }
@@ -241,19 +250,22 @@ function initGame(bodyId, canvasId) {
                 local_player.paddle.releaseBall();
                 event.preventDefault();
             } else {
-                //console.log(event.keyCode);
+                console.log(event.keyCode);
             }
         }
     });
 
-        window.addEventListener('keyup', function (event) {
-            sentLeft = false;
-            sentRight = false;
-            if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
-                local_player.paddle.stop();
-                socket.emit("stop", {player: local_player.id});
-            }
-        });
+    window.addEventListener('keyup', function (event) {
+        sentLeft = false;
+        sentRight = false;
+        if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
+            local_player.paddle.stop();
+            socket.emit("move-stop", {
+                player: local_player.id,
+                roomId: roomId
+            });
+        }
+    });
 
     drawCanvas();
 }
@@ -284,46 +296,58 @@ function toggleFullscreen() {
 function setup() {
     socket = io.connect('/');
 
+    //Initialize the game
     initGame('body', 'game-canvas');
 
+    //Request to join a room
+    socket.emit('room-join');
+
+    //Gets the roomId from the server and stores it
+    //Requests the status of the room
+    socket.on('room-id', function (msg) {
+        console.log(msg.roomId);
+        roomId = msg.roomId;
+        socket.emit('room-status', {
+            roomId: roomId
+        });
+    });
+
     socket.on('player-join', function (msg) {
-        //console.log(msg);
+        console.log(msg);
         only = msg.only;
-        if(msg.playerId){
+        if (msg.playerId) {
             local_player.id = msg.playerId;
         }
-        //console.log(local_player);
+        disconnect = false;
+        console.log(local_player);
     });
-
-
-
 
     socket.on('player-leave', function (msg) {
-        //console.log(msg);
+        console.log(msg);
         only = msg.only;
-        //initGame('body', 'game-canvas');
+        disconnect = msg.disconnect;
     });
 
-    socket.on('move-left', function(data) {
+    socket.on('move-left', function (data) {
         if (data.player != local_player.id) {
             other_player.paddle.moveLeft();
         }
-        //console.log("Player moved left", data);
+        console.log("Player moved left", data);
     });
 
-    socket.on('move-right', function(data) {
+    socket.on('move-right', function (data) {
         if (data.player != local_player.id) {
             other_player.paddle.moveRight();
         }
-        //console.log("Player moved right", data);
+        console.log("Player moved right", data);
 
     });
 
-    socket.on('stop', function(data) {
+    socket.on('move-stop', function (data) {
         if (data.player != local_player.id) {
             other_player.paddle.stop();
         }
-        //console.log("Player stopped", data);
+        console.log("Player stopped", data);
     });
 
 }
