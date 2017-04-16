@@ -1,10 +1,10 @@
 var io;
 var socket;
-var numPlayers = 0;
 var playerId = 0;
 var roomId = 0;
 var rooms = [];
 var joined = false;
+var joinedRoomId = 0;
 
 /**
  *
@@ -16,14 +16,11 @@ exports.onConnect = function (sio, ssocket) {
     //Player setup
     socket.on('room-join', roomJoin);
     socket.on('room-status', roomStatus);
-    
+
     //Paddle controls
     socket.on('move-left', moveLeft);
     socket.on('move-right', moveRight);
     socket.on('move-stop', moveStop);
-
-
-
 };
 
 /**
@@ -32,104 +29,73 @@ exports.onConnect = function (sio, ssocket) {
 function roomJoin() {
     //Give the socket a nickname
     this.nickname = playerId;
-    playerId ++;
-    //Check all the game rooms to see if any need to be filled.
-    //Fill it if it does
-    
+    playerId++;
+
     joined = false;
-    
-    //Check each room to see if it has only one player
+
+    //Check each room to see if it has none or one player
     //If it does, join that room
-    for(var i = 0; i < rooms.length; i++){
-        if(rooms[i].numPlayers === 1){
+    for (var i = 0; i < rooms.length; i++) {
+        if (rooms[i].numPlayers === 1 || rooms[i].numPlayers === 0) {
             rooms[i].join(this);
+            joinedRoomId = rooms[i].roomId;
             joined = true;
+            break;
         }
     }
-    
-    //console.log(joined);
-    //Create a new room and join it if there were
-    //no open rooms
-    if(joined === false){
+
+    //Create a new room and join it if there were no open rooms
+    if (joined === false) {
         rooms.push(new Room(roomId));
-        rooms[rooms.length-1].join(this);
+        rooms[(rooms.length - 1)].join(this);
+        joinedRoomId = rooms[(rooms.length - 1)].roomId;
+        roomId = (rooms.length);
     }
-    
-    //Send the roomid to the client
-    this.emit('room-id', {roomId: roomId++});
-    console.log(rooms);
+    //Send the roomid to only the new client
+    io.to(this.id).emit('room-id', {
+        roomId: joinedRoomId
+    });
 };
 
 /**
- *
+ * Get the status of the room and send it to the client
  */
-function roomStatus(data){
-    console.log('The client data is: ' + data.roomId);
-    console.log('Get status of room: ' + data.roomId);
-    for(var i = 0; i < rooms.length; i++){
-        console.log('This rooms room id is: ' + rooms[i].roomId);
-        if(data.roomId == rooms[i].roomId){
-            console.log('Match');
-            if(rooms[i].numPlayers === 1){
+function roomStatus(data) {
+    for (var i = 0; i < rooms.length; i++) {
+        if (data.roomId == rooms[i].roomId) {
+            if (rooms[i].numPlayers === 1 || rooms[i].numPlayers === 0) {
                 //Let the player know that they are the only one
-                //Increase the playerId
-                this.in(data.roomId).emit('player-join', {
+                io.sockets.in(data.roomId).emit('player-join', {
                     message: 'You are the only player',
                     only: true,
                     playerId: playerId,
                 });
-            }else{
-                //Send to everyone else that anoter player joined
-                this.in(data.roomId).emit('player-join', {
+            } else {
+                //Send to everyone else that another player joined
+                io.sockets.in(data.roomId).emit('player-join', {
                     message: 'Another player joined',
                     only: false
                 });
             }
         }
     }
-    
-    /*//Let the player know that they are the only one
-    //Increase the playerId
-    this.emit('player-join', {
-        message: 'You are the only player',
-        only: numPlayers === 0,
-        playerId: playerId++,
-        roomId: roomId
-    });
-
-    //Send to everyone else that anoter player joined
-    this.broadcast.emit('player-join', {
-        message: 'Another player joined',
-        only: false
-    });*/
-
-    numPlayers++;
-
-    console.log('Number of players: ' + numPlayers);
-
 };
 
 /**
- *
+ * When a client disconnects, let the other player in the room know that they disoconnected
  */
 exports.onDisconnect = function (sio, ssocket) {
-    if (numPlayers !== 0) {
-        numPlayers--;
-    }
-
-    socket.emit('player-leave', {
-        message: 'The other player left',
-        only: numPlayers === 1
-    });
-    console.log('Number of players: ' + numPlayers);
-    
-    console.log(rooms);
-    for(var room in rooms){
-        console.log(room);
-        if(room.players[0] == ssocket.nickname || room.players[1] == ssocket.nickname){
-            room.disconnect(socket.nickname);
+    for (var i = 0; i < rooms.length; i++) {
+        if (rooms[i].players[0] == ssocket.nickname || rooms[i].players[1] == ssocket.nickname) {
+            io.sockets.in(rooms[i].roomId).emit('player-leave', {
+                message: 'The other player left',
+                only: true,
+                disconnect: true
+            });
+            //rooms[i].disconnect(ssocket.nickname);
+            rooms.splice(i,1);
+            break;
         }
-            
     }
 };
 
@@ -140,7 +106,7 @@ function moveLeft(data) {
     console.log('Player moved left', data);
 
     // send to other players
-    socket.broadcast.emit('move-left', data);
+    io.sockets.in(data.roomId).emit('move-left', data);
 };
 
 /**
@@ -150,7 +116,7 @@ function moveRight(data) {
     console.log('Player moved right', data);
 
     // send to other players
-    socket.broadcast.emit('move-right', data);
+    io.sockets.in(data.roomId).emit('move-right', data);
 };
 
 /**
@@ -160,7 +126,7 @@ function moveStop(data) {
     console.log('Player stopped', data);
 
     // send to other players
-    this.broadcast.emit('stop', data);
+    io.sockets.in(data.roomId).emit('move-stop', data);
 };
 
 
@@ -170,20 +136,27 @@ function Room(roomId) {
     this.players = [];
 };
 
-Room.prototype.join = function(socket){
+/**
+ * Handles joining the room
+ */
+Room.prototype.join = function (socket) {
     socket.join(this.roomId);
     this.numPlayers++;
-    if(this.players[0] == null){
+    if (this.players[0] == null) {
         this.players[0] = socket.nickname;
-    }else{
+    } else {
         this.players[1] = socket.nickname;
     }
 };
 
-Room.prototype.disconnect = function(nickname){
-    if(this.players[0] == nickname){
-        this.players.splice(0,1);
-    }else{
-        this.players.splice(1,1);
+/**
+ * Remove the client from the room object
+ */
+Room.prototype.disconnect = function (nickname) {
+    this.numPlayers--;
+    if (this.players[0] == nickname) {
+        this.players.splice(0, 1);
+    } else {
+        this.players.splice(1, 1);
     }
 }
