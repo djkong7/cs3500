@@ -121,11 +121,11 @@ function resizeCanvas() {
     canvas.height = window.innerHeight - borderSize;
 }
 
-/** Create a ball and attach it to the local players paddle
+/** Create a ball and attach it to the players paddle
  */
 function newBall(player) {
     var ball = new Ball(0, 0, BALL_SPEED, 6, 'green');
-    player.paddle.attachBall(ball);
+    player.paddle.attachBall(ball, player == local_player);
 
     player.balls.push(ball);
 }

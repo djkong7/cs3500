@@ -8,6 +8,7 @@ function Paddle(x, y, vx, vy) {
     this.height = PADDLE_HEIGHT;
     this.color = "blue";
     this.attachedBall = null;
+    this.attachedTop = true; // top or bottom
     this.text = 0;
 }
 
@@ -77,19 +78,28 @@ Paddle.prototype.stop = function() {
 
 /** Attach a ball to this paddle
  */
-Paddle.prototype.attachBall = function(ball) {
+Paddle.prototype.attachBall = function(ball, top) {
     ball.attachedPaddle = this;
     this.attachedBall = ball;
+    this.attachedTop = top;
 }
 
 /** Release the ball at an angle from the paddle
  */
 Paddle.prototype.releaseBall = function() {
     if (this.attachedBall) {
+        var y = -5;
+        var vx = this.attachedBall.speed * Math.cos(1);
+        var vy = -this.attachedBall.speed * Math.sin(1);
+        if (!this.attachedTop) {
+            y = -y;
+            vy = -vy;
+        }
+
         this.attachedBall.attachedPaddle = null;
-        this.attachedBall.y -= 5;
-        this.attachedBall.vx = this.attachedBall.speed * Math.cos(1);
-        this.attachedBall.vy = -this.attachedBall.speed * Math.sin(1);
+        this.attachedBall.y += y;
+        this.attachedBall.vx = vx;
+        this.attachedBall.vy = vy;
         this.attachedBall = null;
     }
 }

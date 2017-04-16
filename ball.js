@@ -23,8 +23,12 @@ Ball.prototype.draw = function(c) {
 Ball.prototype.update = function() {
     if (this.attachedPaddle) {
         // stay near paddle
+        var y = this.attachedPaddle.y - this.radius;
+        if (!this.attachedPaddle.attachedTop) {
+            y = this.attachedPaddle.y + this.attachedPaddle.height + this.radius;
+        }
         this.x = this.attachedPaddle.x + this.attachedPaddle.width / 2;
-        this.y = this.attachedPaddle.y - this.radius;
+        this.y = y;
     } else {
         this.x += this.vx;
         this.y += this.vy;
