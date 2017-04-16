@@ -37,7 +37,8 @@ function Player(id, name) {
     this.bricks = null;
     this.balls = null;
     this.score = 0;
-    this.nextBallId = 0;
+    this.lastBallId = 0;
+    this.ballIncrement = 1;
 }
 
 function removeBallAndUpdateScore(player, ball) {
@@ -197,7 +198,9 @@ function resizeCanvas() {
 /** Create a ball and attach it to the players paddle
  */
 function newBall(player) {
-    var ball = new Ball(player.nextBallId++, 0, 0, roomSpeed, 6, 'green');
+    var ballId = player.lastBallId + player.ballIncrement;
+    player.lastBallId = ballId;
+    var ball = new Ball(ballId, 0, 0, roomSpeed, 6, 'green');
     player.paddle.attachBall(ball, player == local_player);
 
     player.balls.push(ball);
@@ -459,8 +462,12 @@ function setup() {
         if (!only) {
             if (local_player.id == msg.player1Id) {
                 other_player.id = msg.player2Id;
+                local_player.ballIncrement = 1;
+                other_player.ballIncrement = -1;
             } else {
                 other_player.id = msg.player1Id;
+                local_player.ballIncrement = -1;
+                other_player.ballIncrement = 1;
             }
             console.log("Other player id: " + other_player.id);
 
@@ -533,10 +540,14 @@ function setup() {
                 } else {
                     // update ball
                     // TODO: this info is slightly behind!
-                    ball.x = data.x + data.vx
-                    ball.y = canvas.gameHeight - data.y - data.vy
-                    ball.vx = data.vx
-                    ball.vy = -data.vy
+                    var x = ball.x;
+                    var y = ball.y;
+                    ball.x = data.x + data.vx;
+                    ball.y = canvas.gameHeight - data.y - data.vy;
+                    ball.vx = data.vx;
+                    ball.vy = -data.vy;
+
+                    console.log("Diff x: " + Math.floor(ball.x - x) + ", Diff y: " + Math.floor(ball.y - y));
                 }
             }
         }
