@@ -45,7 +45,7 @@ function drawCanvas(now) {
     var h = canvas.height;
     var bricks = null;
     var balls = null;
-    var hit_bottom = false;
+    var hitPlayerSide = false;
 
     c.strokeStyle = 'gray';
     c.fillStyle = '#EEE';
@@ -67,9 +67,9 @@ function drawCanvas(now) {
                     collideBallAndPlayerBricks(ball, player, players[j].bricks);
                     collideBallAndPlayerPaddle(ball, players[j].paddle);
                 }
-                hit_bottom = collideBallAndScreen(ball, player == local_player);
+                hitPlayerSide = collideBallAndScreen(ball, player == local_player);
             }
-            if (hit_bottom) {
+            if (hitPlayerSide) {
                 // remove ball from player
                 player.balls.splice(player.balls.indexOf(ball), 1);
 
@@ -257,6 +257,9 @@ function initGame(bodyId, canvasId) {
                 }
             } else if (event.keyCode == KEY_SPACE) {
                 local_player.paddle.releaseBall();
+                socket.emit('release-ball', {
+                    roomId: roomId
+                });
                 event.preventDefault();
             } else {
                 console.log(event.keyCode);
@@ -380,6 +383,13 @@ function setup() {
             other_player.paddle.stop();
         }
         console.log("Player stopped", data);
+    });
+
+    socket.on('release-ball', function (data) {
+        if (data.playerId != local_player.id) {
+            other_player.paddle.releaseBall();
+            console.log("Player released ball ", data);
+        }
     });
 
 }

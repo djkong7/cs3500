@@ -23,6 +23,7 @@ exports.onConnect = function (sio, ssocket) {
     socket.on('move-left', moveLeft);
     socket.on('move-right', moveRight);
     socket.on('move-stop', moveStop);
+    socket.on('release-ball', releaseBall);
 
     console.log("hooked up events");
 };
@@ -149,6 +150,14 @@ function moveStop(data) {
     // send to other players
     io.sockets.in(data.roomId).emit('move-stop', data);
 };
+
+function releaseBall(data) {
+    console.log('Player released ball', data);
+
+    data.playerId = this.nickname;
+
+    io.sockets.in(data.roomId).emit('release-ball', data);
+}
 
 
 function Room(roomId) {

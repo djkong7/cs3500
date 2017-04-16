@@ -3,10 +3,10 @@
  * Ball ball     - the ball that is colliding
  * bool is_local - if this is a local player ball
  *
- * Returns true if is_local and ball hit bottom of screen
+ * Returns true if ball hit player side of screen
  */
 function collideBallAndScreen(ball, is_local) {
-    var hit_bottom = false;
+    var hitPlayerSide = false;
     //Edge of scrren
     if (ball.y > canvas.height - ball.radius || ball.y < ball.radius) {
         ball.vy = -ball.vy;
@@ -16,13 +16,18 @@ function collideBallAndScreen(ball, is_local) {
     }
 
     // if this is a local player ball, return true if hit bottom of screen
+    // otherwise hit true if hit top of screen
     if (is_local) {
-        if (ball.y > canvas.height - ball.radius) {
-            hit_bottom = true;
+        if (ball.y >= canvas.height - ball.radius) {
+            hitPlayerSide = true;
+        }
+    } else {
+        if (ball.y <= ball.radius) {
+            hitPlayerSide = true;
         }
     }
 
-    return hit_bottom;
+    return hitPlayerSide;
 }
 
 /** Have the ball bounce off and destroy bricks
