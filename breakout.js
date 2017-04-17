@@ -13,6 +13,9 @@ var KEY_DOWN = 40;
 var MAX_BOUNCE_ANGLE = Math.PI / 2;
 var SCORE_BRICK_DESTROY = 1;
 var SCORE_BALL_LOST = -5;
+var BRICK_COLOR = 'red';
+var PADDLE_COLOR = 'blue';
+var BALL_COLOR = 'green';
 
 var canvas = null;
 var c = null;
@@ -22,6 +25,9 @@ var other_player = null;
 var clickTimeout = null;
 var frame = 0;
 var lastTime = null;
+var localBrickColor = BRICK_COLOR;
+var localPaddleColor = PADDLE_COLOR;
+var localBallColor = BALL_COLOR;
 
 var roomId = 0;
 var roomSpeed = 0;
@@ -190,7 +196,10 @@ function getCanvasSize() {
     var borderSize = 2;
     var w = window.innerWidth - borderSize;
     var h = window.innerHeight - borderSize;
-    return {w: w, h: h};
+    return {
+        w: w,
+        h: h
+    };
 }
 
 
@@ -209,9 +218,13 @@ function resizeCanvas() {
 /** Create a ball and attach it to the players paddle
  */
 function newBall(player) {
+    var color = BALL_COLOR;
+    if(player == local_player){
+        color = localBallColor;
+    }
     var ballId = player.lastBallId + player.ballIncrement;
     player.lastBallId = ballId;
-    var ball = new Ball(ballId, 0, 0, roomSpeed, 6, 'green');
+    var ball = new Ball(ballId, 0, 0, roomSpeed, 6, color);
     player.paddle.attachBall(ball, player == local_player);
 
     player.balls.push(ball);
@@ -219,12 +232,9 @@ function newBall(player) {
 
 /** Create a player and return it
  */
-function createPlayer() {
+function createPlayer(paddleColor) {
     var player = new Player(-1, 'Steven');
-    player.paddle = new Paddle(
-        -100,
-        -100,
-        0, 0);
+    player.paddle = new Paddle(-100, -100, 0, 0, paddleColor);
 
     player.balls = [];
     player.bricks = [];
@@ -251,6 +261,10 @@ function movePaddle(player, x, y) {
 }
 
 function addBricks(player, isLocal) {
+    var color = BRICK_COLOR;
+    if(isLocal){
+        color = localBrickColor;
+    }
     // add bricks
     var num_bricks = Math.floor(canvas.gameWidth / BRICK_WIDTH);
     var x_offset = (canvas.gameWidth - num_bricks * BRICK_WIDTH) / 2;
@@ -263,11 +277,11 @@ function addBricks(player, isLocal) {
 
     for (var j = 0; j < BRICK_ROWS; ++j) {
         for (var i = 0; i < num_bricks; ++i) {
-            var b = new Brick(x_offset + i * BRICK_WIDTH, y);
+            var b = new Brick(x_offset + i * BRICK_WIDTH, y, color);
             //console.log("Added brick to (" + i + ", 100");
             // special blocks
             if (i == 0 || i == num_bricks - 1) {
-                b.color = 'gold';
+                //b.color = 'gold';
             }
             player.bricks.push(b);
         }
@@ -284,10 +298,10 @@ function initPlayersAndCanvas(canvasId) {
     c = canvas.getContext('2d');
     resizeCanvas();
 
-    local_player = createPlayer();
+    local_player = createPlayer(localPaddleColor);
     players.push(local_player);
 
-    other_player = createPlayer();
+    other_player = createPlayer(PADDLE_COLOR);
     players.push(other_player);
 
     drawCanvas();
@@ -432,6 +446,14 @@ function toggleFullscreen() {
 }
 
 function setup() {
+
+    var brickCookie = getCookie('bricks');
+    var paddleCookie = getCookie('paddle');
+    var ballCookie = getCookie('ball');
+    if (brickCookie) localBrickColor = brickCookie;
+    if (paddleCookie) localPaddleColor = paddleCookie;
+    if (ballCookie) localBallColor = ballCookie;
+
     socket = io.connect('/');
 
     socket.on('disconnect', function (msg) {
@@ -499,7 +521,7 @@ function setup() {
         }
     });
 
-    socket.on('move-paddle', function(data) {
+    socket.on('move-paddle', function (data) {
         if (data.playerId == other_player.id) {
             //console.log('Player ' + data.playerId + ' is moving paddle to ' + data.x);
             movePaddle(other_player, data.x, 0);
@@ -536,7 +558,7 @@ function setup() {
         }
     });
 
-    socket.on('update-ball', function(data) {
+    socket.on('update-ball', function (data) {
         if (data.playerId != local_player.id) {
             var ball = null;
             for (var i = 0; i < other_player.balls.length; ++i) {
@@ -565,7 +587,7 @@ function setup() {
         }
     });
 
-    socket.on('update-brick', function(data) {
+    socket.on('update-brick', function (data) {
         //console.log('update-brick', data);
         if (data.playerId != local_player.id) {
             var brick = null;

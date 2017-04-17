@@ -1,4 +1,4 @@
-function Paddle(x, y, vx, vy) {
+function Paddle(x, y, vx, vy, color) {
     this.x = x;
     this.y = y;
     this.vx = vx;
@@ -6,7 +6,7 @@ function Paddle(x, y, vx, vy) {
     this.targetX = 0; // where it moves to, then stops
     this.width = PADDLE_WIDTH;
     this.height = PADDLE_HEIGHT;
-    this.color = "blue";
+    this.color = color;
     this.attachedBall = null;
     this.attachedTop = true; // top or bottom
     this.text = 0;

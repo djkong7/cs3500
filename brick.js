@@ -1,9 +1,9 @@
-function Brick(x, y) {
+function Brick(x, y, color) {
     this.x = x;
     this.y = y;
     this.width = BRICK_WIDTH;
     this.height = BRICK_HEIGHT;
-    this.color = 'red';
+    this.color = color;
     this.valid = true;
 }
 

@@ -1,45 +1,103 @@
 <!DOCTYPE html>
 <html>
 
-<head lang="en">
-    <meta charset="utf-8" />
+<head lang='en'>
+    <meta charset='utf-8' />
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <title>Breakout Home</title>
+
+    <!-- Bootstrap core CSS -->
+    <link rel='stylesheet' href='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css' integrity='sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u' crossorigin='anonymous'>
+
+    <link rel='stylesheet' href='home.css'>
+    <script type='text/javascript' src='cookies.js'></script>
+
 </head>
 
 <body id='body'>
-    
-    
-    
-    
-    
-    <h1>Rules:</h1>
-    <ul>
-        <li>The goal of the game is to get the most amount of points.</li>
-        <li>Breaking any brick awards you 1 point.</li>
-        <li>Whoever breaks all their bricks first is awarded a bonus.</li>
-    </ul>
-    
-    <h1>Controls:</h1>
-    <h2>Computer</h2>
-    <ul>
-        <li>Left and right arrow keys or mouse move to move the paddle.</li>
-        <li>Space to launch ball.</li>
-    </ul>
-    <h2>Phone</h2>
-    <ul>
-        <li>Paddle follows finger.</li>
-        <li>Double tap to launch ball.</li>
-    </ul>
-    
+    <header>
+        <nav class='navbar navbar-inverse'>
+            <div class='container-fluid'>
+                <div class='navbar-header'>
+                    <button type='button' class='navbar-toggle' data-toggle='collapse' data-target='#myNavbar'>
+                            <span class='icon-bar'></span>
+                            <span class='icon-bar'></span>
+                            <span class='icon-bar'></span>                        
+                          </button>
+                    <a class='navbar-brand' href='#'><img src='logo.png' /></a>
+                </div>
+                <div class='collapse navbar-collapse' id='myNavbar'>
+                    <ul class='nav navbar-nav'>
+                        <li class='active'><a href='#'>Home</a></li>
+                        <li><a href='#rules'>Rules</a></li>
+                        <li><a href='#controls'>Controls</a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <main>
+        <div class='container' id='mainContent'>
+            <h1>Player customization:</h1>
+            <div class='row'>
+                <div class='col-sm-4 text-center'>
+                    <label for='bricks'>Bricks color:</label>
+                    <input type='color' id='bricks' value='#f00'/>
+                </div>
+                <div class='col-sm-4 text-center'>
+                    <label for='paddle'>Paddle color:</label>
+                    <input type='color' id='paddle' value='#00f'/>
+                </div>
+                <div class='col-sm-4 text-center'>
+                    <label for='ball'>Ball color:</label>
+                    <input type='color' id='ball' value='#0f0'/>
+                </div>
+            </div>
+            <br/>
+            <div class='row'>
+                <div class='col-sm-12 text-center'>
+                    <button type='button' class='btn-danger btn-lg' onclick='startGame()'>Start Game</button>
+                </div>
+            </div>
+            <!--<div class='row'>
+                <div class='col-sm-12 text-center'>-->
+                    <h1 id='rules'>Rules:</h1>
+                    <ul class=''>
+                        <li>The goal of the game is to get the most amount of points.</li>
+                        <li>Breaking any brick awards you 1 point.</li>
+                        <li>Whoever breaks all their bricks first is awarded a bonus.</li>
+                    </ul>
+                    <h1 id='controls'>Controls:</h1>
+                    <h2>Computer</h2>
+                    <ul class=''>
+                        <li>Left and right arrow keys or mouse move to move the paddle.</li>
+                        <li>Space to launch ball.</li>
+                    </ul>
+                    <h2>Phone</h2>
+                    <ul class=''>
+                        <li>Paddle follows finger.</li>
+                        <li>Double tap to launch ball.</li>
+                    </ul>
+                <!--</div>
+            </div>-->
+        </div>
+    </main>
 
-    <h1>About Us:</h1>
-    <h2>Steven Johnson</h2>
-    <h2>Danny Kiel</h2>
-
-
-    <footer>
+    <footer class='container-fluid text-center'>
         <small>Copyright 2017 Danny Kiel and Steven Johnson</small>
     </footer>
+
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src='https://code.jquery.com/jquery-3.2.1.min.js' integrity='sha256-hwg4gsxgFZhOsEEamdOYGBf13FyQuiTwlAQgxVSNgt4=' crossorigin='anonymous'></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src='https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js' integrity='sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa' crossorigin='anonymous'></script>
+    <script type='text/javascript' src='home.js'></script>
+    <script>
+        getCookies();
+
+    </script>
 </body>
 
 </html>

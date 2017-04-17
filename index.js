@@ -13,7 +13,7 @@ app.use(express.static(__dirname));
 
 // Send the html file to the client
 app.get('/', function (req, res) {
-    res.sendFile(__dirname + '/breakout.html');
+    res.sendFile(__dirname + '/home.html');
 });
 
 // Executes when a client connects
