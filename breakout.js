@@ -1,6 +1,6 @@
 var BRICK_WIDTH = 50;
 var BRICK_HEIGHT = 20;
-var BRICK_ROWS = 1;
+var BRICK_ROWS = 4;
 var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
 var PADDLE_SPEED = 20;
@@ -13,7 +13,7 @@ var KEY_DOWN = 40;
 var MAX_BOUNCE_ANGLE = Math.PI / 2;
 var SCORE_BRICK_DESTROY = 1;
 var SCORE_BALL_LOST = -5;
-var GAME_WAIT_SECONDS = 5;
+var GAME_WAIT_SECONDS = 3;
 // Game States
 var STATE_WAIT_JOIN =       0;
 var STATE_WAIT_OPPONENT =   1;
