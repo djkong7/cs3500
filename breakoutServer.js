@@ -75,7 +75,7 @@ function roomJoin(data) {
     if (room.w > MAX_WIDTH) room.w = MAX_WIDTH;
 
     // update room speed
-    room.speed = Math.floor(room.h / 50);
+    room.speed = Math.floor(room.h / 40);
     if (room.speed < 1) room.speed = 1;
 
     //Send the roomid to only the new client
@@ -145,7 +145,7 @@ function movePaddle(data) {
  *
  */
 function moveLeft(data) {
-    console.log('Player moved left', data);
+    //console.log('Player moved left', data);
     data.playerId = this.nickname;
 
     // send to other players
@@ -156,7 +156,7 @@ function moveLeft(data) {
  *
  */
 function moveRight(data) {
-    console.log('Player moved right', data);
+    //console.log('Player moved right', data);
     data.playerId = this.nickname;
 
     // send to other players
@@ -167,7 +167,7 @@ function moveRight(data) {
  *
  */
 function moveStop(data) {
-    console.log('Player stopped', data);
+    //console.log('Player stopped', data);
     data.playerId = this.nickname;
 
     // send to other players

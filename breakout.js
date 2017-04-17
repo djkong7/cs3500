@@ -1,9 +1,9 @@
 var BRICK_WIDTH = 50;
 var BRICK_HEIGHT = 20;
-var BRICK_ROWS = 5;
+var BRICK_ROWS = 4;
 var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
-var PADDLE_SPEED = 14;
+var PADDLE_SPEED = 20;
 var EDGE_COLOR = 'black';
 var KEY_SPACE = 32;
 var KEY_LEFT = 37;
@@ -16,6 +16,15 @@ var SCORE_BALL_LOST = -5;
 var BRICK_COLOR = 'red';
 var PADDLE_COLOR = 'blue';
 var BALL_COLOR = 'green';
+var GAME_WAIT_SECONDS = 3;
+// Game States
+var STATE_WAIT_JOIN =       0;
+var STATE_WAIT_OPPONENT =   1;
+var STATE_WAIT_PLAY =       2
+var STATE_PLAY =            3;
+var STATE_WON =             4;
+var STATE_LOST =            5;
+var STATE_DISCONNECTED =    6;
 
 var canvas = null;
 var c = null;
@@ -28,20 +37,21 @@ var lastTime = null;
 var localBrickColor = BRICK_COLOR;
 var localPaddleColor = PADDLE_COLOR;
 var localBallColor = BALL_COLOR;
+var state = STATE_WAIT_JOIN;
+var startTime = null;
 
 var roomId = 0;
 var roomSpeed = 0;
-var only = false;
-var disconnect = false;
 var socket = null;
 var sentLeft = false;
 var sentRight = false;
 
-function Player(id, name) {
+
+function Player(id) {
     this.id = id;
-    this.name = name;
     this.paddle = null;
     this.bricks = null;
+    this.brokenBricks = 0;
     this.balls = null;
     this.score = 0;
     this.lastBallId = 0;
@@ -57,6 +67,24 @@ function removeBallAndUpdateScore(player, ball) {
 
     // new ball for player
     newBall(player);
+}
+
+function checkEndGame() {
+    if (state == STATE_PLAY) {
+        for (var i = 0; i < players.length; ++i) {
+            if (players[i].brokenBricks == players[i].bricks.length) {
+                console.log("Player " + players[i].id + " has had all of his bricks broken");
+                var bonus = Math.ceil(0.1 * players[i].brokenBricks);
+                console.log("bonus: " + bonus);
+                players[i].score += bonus;
+                if (local_player.score >= other_player.score) {
+                    state = STATE_WON;
+                } else {
+                    state = STATE_LOST;
+                }
+            }
+        }
+    }
 }
 
 /** Draw the canvas and do game logic
@@ -86,107 +114,130 @@ function drawCanvas(now) {
 
     c.fillRect(0, 0, w, h); // clears
 
-    // draw everything at an offset
-    c.save();
-    c.translate(canvas.offX, canvas.offY);
+    if (state == STATE_PLAY) {
+        // draw everything at an offset
+        c.save();
+        c.translate(canvas.offX, canvas.offY);
 
-    // draw game region border
-    c.strokeStyle = 'green';
-    c.rect(0, 0, gw, gh);
-    c.stroke();
+        // draw game region border
+        c.strokeStyle = 'green';
+        c.rect(0, 0, gw, gh);
+        c.stroke();
 
-    for (var i = 0; i < players.length; ++i) {
-        player = players[i];
-        balls = player.balls;
-        bricks = player.bricks;
-        paddle = player.paddle;
+        for (var i = 0; i < players.length; ++i) {
+            player = players[i];
+            balls = player.balls;
+            bricks = player.bricks;
+            paddle = player.paddle;
 
-        // TODO: Collide everything, update everything, then draw everything
-        // TODO: ACCOUNT FOR FRAMERATE
+            // TODO: Collide everything, update everything, then draw everything
+            // TODO: ACCOUNT FOR FRAMERATE
 
-        // handle collisions
-        balls.forEach(function (ball) {
-            hitPlayerSide = false;
-            if (!ball.attachedPaddle) {
-                for (var j = 0; j < players.length; ++j) {
-                    collidedBricks = collideBallAndPlayerBricks(ball, player, players[j].bricks);
-                    if (player == local_player) {
-                        for (var k = 0; k < collidedBricks.length; ++k) {
-                            brickIndex = players[j].bricks.indexOf(collidedBricks[k]);
-                            player.score += SCORE_BRICK_DESTROY;
-                            collidedBricks[k].valid = false;
-                            socket.emit('update-brick', {
-                                roomId: roomId,
-                                ownerId: players[j].id,
-                                index: brickIndex,
-                                valid: false,
-                            });
+            // handle collisions
+            balls.forEach(function (ball) {
+                hitPlayerSide = false;
+                if (!ball.attachedPaddle) {
+                    for (var j = 0; j < players.length; ++j) {
+                        collidedBricks = collideBallAndPlayerBricks(ball, player, players[j].bricks);
+                        if (player == local_player) {
+                            for (var k = 0; k < collidedBricks.length; ++k) {
+                                brickIndex = players[j].bricks.indexOf(collidedBricks[k]);
+                                player.score += SCORE_BRICK_DESTROY;
+                                collidedBricks[k].valid = false;
+                                players[j].brokenBricks++;
+                                socket.emit('update-brick', {
+                                    roomId: roomId,
+                                    ownerId: players[j].id,
+                                    index: brickIndex,
+                                    valid: false,
+                                });
+                            }
                         }
+                        collideBallAndPlayerPaddle(ball, players[j].paddle);
                     }
-                    collideBallAndPlayerPaddle(ball, players[j].paddle);
+                    hitPlayerSide = collideBallAndScreen(ball, player == local_player);
                 }
-                hitPlayerSide = collideBallAndScreen(ball, player == local_player);
-            }
-            if (hitPlayerSide) {
-                // if local, update other players that our ball was deleted
-                if (player == local_player) {
-                    removeBallAndUpdateScore(player, ball);
-                    socket.emit('update-ball', {
-                        roomId: roomId,
-                        ballId: ball.id,
-                        x: null,
-                        y: null,
-                    });
+                if (hitPlayerSide) {
+                    // if local, update other players that our ball was deleted
+                    if (player == local_player) {
+                        removeBallAndUpdateScore(player, ball);
+                        socket.emit('update-ball', {
+                            roomId: roomId,
+                            ballId: ball.id,
+                            x: null,
+                            y: null,
+                        });
+                    }
+                } else {
+                    ball.update(deltatime);
+                    ball.draw(c);
                 }
-            } else {
-                ball.update(deltatime);
-                ball.draw(c);
+
+                if (!ball.attachedPaddle) {
+                    if (frame % 5 == 0) {
+                        // send update for ball position
+                        socket.emit('update-ball', {
+                            roomId: roomId,
+                            ballId: ball.id,
+                            x: ball.x,
+                            y: ball.y,
+                            vx: ball.vx,
+                            vy: ball.vy,
+                        });
+                    }
+                }
+
+            });
+
+            // draw bricks
+            for (var j = 0; j < bricks.length; ++j) {
+                bricks[j].draw(c);
             }
 
-            if (!ball.attachedPaddle) {
-                if (frame % 5 == 0) {
-                    // send update for ball position
-                    socket.emit('update-ball', {
-                        roomId: roomId,
-                        ballId: ball.id,
-                        x: ball.x,
-                        y: ball.y,
-                        vx: ball.vx,
-                        vy: ball.vy,
-                    });
-                }
-            }
-
-        });
-
-        // draw bricks
-        for (var j = 0; j < bricks.length; ++j) {
-            bricks[j].draw(c);
+            // draw paddles
+            paddle.text = player.score;
+            paddle.update(deltatime);
+            paddle.draw(c);
         }
 
-        // draw paddles
-        paddle.text = player.score;
-        paddle.update(deltatime);
-        paddle.draw(c);
-    }
+        // restore offset translation
+        c.restore();
 
-    // restore offset translation
-    c.restore();
-
-    if (only) {
+        checkEndGame();
+    } else {
         c.fillStyle = 'rgba(10,10,10,.8)';
         c.fillRect(0, 0, w, h);
 
         c.fillStyle = 'white';
-        c.font = 'bold 2em sans-serif';
+        c.font = 'bold 24px sans-serif';
         c.textAlign = 'center';
-        if (disconnect) {
+        if (state == STATE_DISCONNECTED) {
             c.fillText('Opponent disconnected', w / 2, h / 2 - 25);
             c.fillText('Refresh for new opponent', w / 2, h / 2 + 25);
-        } else {
+        } else if (state == STATE_WAIT_OPPONENT) {
             c.fillText('Waiting for an opponent', w / 2, h / 2);
+        } else if (state == STATE_WAIT_JOIN) {
+            c.fillText('Connecting to server', w / 2, h / 2);
+        } else if (state == STATE_WAIT_PLAY) {
+            var seconds = Math.ceil((startTime - (new Date()).getTime()) / 1000.0);
+            var plural = (seconds != 1) ? 's' : '';
+            c.fillText('Game starts in ' + seconds + ' second' + plural, w / 2, h / 2);
+        } else if (state == STATE_WON) {
+            c.fillText('You won!', w / 2, h / 2);
+            c.font = '12px';
+            c.fillText(local_player.score + ' - ' + other_player.score, w / 2, h / 2 - 50);
+        } else if (state == STATE_LOST) {
+            c.fillText('You lost!', w / 2, h / 2);
+            c.font = '12px';
+            c.fillText(local_player.score + ' - ' + other_player.score, w / 2, h / 2 - 50);
         }
     }
+
+    /*
+    c.fillStyle = 'black';
+    c.font = 'bold 12px sans-serif';
+    c.fillText('State ' + state, 50, 50);
+    */
 
     frame++;
     raf = window.requestAnimationFrame(drawCanvas);
@@ -233,7 +284,7 @@ function newBall(player) {
 /** Create a player and return it
  */
 function createPlayer(paddleColor) {
-    var player = new Player(-1, 'Steven');
+    var player = new Player(-1);
     player.paddle = new Paddle(-100, -100, 0, 0, paddleColor);
 
     player.balls = [];
@@ -339,16 +390,14 @@ function initGame(w, h) {
         resizeCanvas();
     });
 
-    //If the player is the only, draw game but don't attach listeners to wait until
-    //another player connects.
     window.addEventListener('mousemove', function (event) {
-        if (!only) {
+        if (state == STATE_PLAY) {
             movePaddle(local_player, event.offsetX, event.offsetY);
         }
     });
 
     window.addEventListener('touchstart', function (event) {
-        if (!only) {
+        if (state == STATE_PLAY) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
             var x = touch.pageX;
             var y = touch.pageY;
@@ -371,14 +420,14 @@ function initGame(w, h) {
     });
 
     window.addEventListener('touchmove', function (event) {
-        if (!only) {
+        if (state == STATE_PLAY) {
             var touch = event.changedTouches[event.changedTouches.length - 1];
             movePaddle(local_player, touch.pageX, touch.pageY);
         }
     });
 
     window.addEventListener('keydown', function (event) {
-        if (!only) {
+        if (state == STATE_PLAY) {
             if (event.keyCode == KEY_LEFT) {
                 local_player.paddle.moveLeft();
                 if (!sentLeft) {
@@ -410,14 +459,16 @@ function initGame(w, h) {
     });
 
     window.addEventListener('keyup', function (event) {
-        sentLeft = false;
-        sentRight = false;
-        if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
-            local_player.paddle.stop();
-            socket.emit("move-stop", {
-                x: local_player.paddle.x,
-                roomId: roomId,
-            });
+        if (state == STATE_PLAY) {
+            sentLeft = false;
+            sentRight = false;
+            if (event.keyCode == KEY_LEFT || event.keyCode == KEY_RIGHT) {
+                local_player.paddle.stop();
+                socket.emit("move-stop", {
+                    x: local_player.paddle.x,
+                    roomId: roomId,
+                });
+            }
         }
     });
 }
@@ -459,8 +510,7 @@ function setup() {
     socket.on('disconnect', function (msg) {
         console.log("server disconnect: " + msg);
         socket.disconnect();
-        disconnect = true;
-        only = true;
+        state = STATE_DISCONNECTED;
     });
 
     // Initialize the players
@@ -482,6 +532,7 @@ function setup() {
         local_player.id = msg.playerId;
         console.log("New player id is: " + msg.playerId);
         console.log(local_player);
+        state = STATE_WAIT_JOIN;
         socket.emit('room-status', {
             roomId: roomId,
         });
@@ -506,8 +557,16 @@ function setup() {
 
             roomSpeed = msg.speed;
 
-            //Initialize the game
-            initGame(msg.w, msg.h);
+            var now = (new Date()).getTime();
+            state = STATE_WAIT_PLAY;
+            startTime = now + GAME_WAIT_SECONDS * 1000;
+            setTimeout(function () {
+                state = STATE_PLAY;
+                //Initialize the game
+                initGame(msg.w, msg.h);
+            }, GAME_WAIT_SECONDS * 1000);
+        } else {
+            state = STATE_WAIT_OPPONENT;
         }
     });
 
@@ -518,6 +577,7 @@ function setup() {
         if (disconnect) {
             console.log("Disconnecting");
             socket.disconnect();
+            state = STATE_DISCONNECTED;
         }
     });
 
@@ -532,14 +592,14 @@ function setup() {
         if (data.playerId != local_player.id) {
             other_player.paddle.moveLeft();
         }
-        console.log("Player moved left", data);
+        //console.log("Player moved left", data);
     });
 
     socket.on('move-right', function (data) {
         if (data.playerId != local_player.id) {
             other_player.paddle.moveRight();
         }
-        console.log("Player moved right", data);
+        //console.log("Player moved right", data);
 
     });
 
@@ -548,13 +608,13 @@ function setup() {
             other_player.paddle.stop();
             other_player.paddle.x = data.x;
         }
-        console.log("Player stopped", data);
+        //console.log("Player stopped", data);
     });
 
     socket.on('release-ball', function (data) {
         if (data.playerId != local_player.id) {
             other_player.paddle.releaseBall();
-            console.log("Player released ball ", data);
+            //console.log("Player released ball ", data);
         }
     });
 
@@ -574,14 +634,14 @@ function setup() {
                 } else {
                     // update ball
                     // TODO: this info is slightly behind!
-                    var x = ball.x;
-                    var y = ball.y;
-                    ball.x = data.x + data.vx;
-                    ball.y = canvas.gameHeight - data.y - data.vy;
-                    ball.vx = data.vx;
-                    ball.vy = -data.vy;
+                    //var x = ball.x;
+                    //var y = ball.y;
+                    ball.netX = data.x;
+                    ball.netY = canvas.gameHeight - data.y;
+                    ball.netVx = data.vx;
+                    ball.netVy = -data.vy;
 
-                    console.log("Diff x: " + Math.floor(ball.x - x) + ", Diff y: " + Math.floor(ball.y - y));
+                    //console.log("Diff x: " + Math.floor(ball.x - x) + ", Diff y: " + Math.floor(ball.y - y));
                 }
             }
         }
@@ -593,10 +653,14 @@ function setup() {
             var brick = null;
             if (data.ownerId == other_player.id) {
                 brick = other_player.bricks[data.index];
+                other_player.brokenBricks++;
             } else if (data.ownerId == local_player.id) {
                 //console.log("one of our bricks was hit!");
                 brick = local_player.bricks[data.index];
+                local_player.brokenBricks++;
             }
+
+            checkEndGame();
 
             if (brick) {
                 brick.valid = data.valid;
