@@ -8,6 +8,10 @@ function Ball(id, x, y, speed, r, c) {
     this.radius = r;
     this.color = c;
     this.attachedPaddle = null;
+    this.netX = null; // networked x and y
+    this.netY = null;
+    this.netVx = null;
+    this.netVy = null;
 }
 
 /** Draw the ball
@@ -31,7 +35,16 @@ Ball.prototype.update = function(deltatime) {
         this.x = this.attachedPaddle.x + this.attachedPaddle.width / 2;
         this.y = y;
     } else {
+        if (this.netX) this.x = this.netX;
+        if (this.netY) this.y = this.netY;
+        if (this.netVx) this.vx = this.netVx;
+        if (this.netVy) this.vy = this.netVy;
         this.x += this.vx * deltatime;
         this.y += this.vy * deltatime;
+
+        this.netX = null;
+        this.netY = null;
+        this.netVx = null;
+        this.netVy = null;
     }
 }

@@ -1,9 +1,9 @@
 var BRICK_WIDTH = 50;
 var BRICK_HEIGHT = 20;
-var BRICK_ROWS = 5;
+var BRICK_ROWS = 4;
 var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
-var PADDLE_SPEED = 14;
+var PADDLE_SPEED = 20;
 var EDGE_COLOR = 'black';
 var KEY_SPACE = 32;
 var KEY_LEFT = 37;
@@ -510,14 +510,14 @@ function setup() {
         if (data.playerId != local_player.id) {
             other_player.paddle.moveLeft();
         }
-        console.log("Player moved left", data);
+        //console.log("Player moved left", data);
     });
 
     socket.on('move-right', function (data) {
         if (data.playerId != local_player.id) {
             other_player.paddle.moveRight();
         }
-        console.log("Player moved right", data);
+        //console.log("Player moved right", data);
 
     });
 
@@ -526,13 +526,13 @@ function setup() {
             other_player.paddle.stop();
             other_player.paddle.x = data.x;
         }
-        console.log("Player stopped", data);
+        //console.log("Player stopped", data);
     });
 
     socket.on('release-ball', function (data) {
         if (data.playerId != local_player.id) {
             other_player.paddle.releaseBall();
-            console.log("Player released ball ", data);
+            //console.log("Player released ball ", data);
         }
     });
 
@@ -552,14 +552,14 @@ function setup() {
                 } else {
                     // update ball
                     // TODO: this info is slightly behind!
-                    var x = ball.x;
-                    var y = ball.y;
-                    ball.x = data.x + data.vx;
-                    ball.y = canvas.gameHeight - data.y - data.vy;
-                    ball.vx = data.vx;
-                    ball.vy = -data.vy;
+                    //var x = ball.x;
+                    //var y = ball.y;
+                    ball.netX = data.x;
+                    ball.netY = canvas.gameHeight - data.y;
+                    ball.netVx = data.vx;
+                    ball.netVy = -data.vy;
 
-                    console.log("Diff x: " + Math.floor(ball.x - x) + ", Diff y: " + Math.floor(ball.y - y));
+                    //console.log("Diff x: " + Math.floor(ball.x - x) + ", Diff y: " + Math.floor(ball.y - y));
                 }
             }
         }
