@@ -13,6 +13,7 @@ var KEY_DOWN = 40;
 var MAX_BOUNCE_ANGLE = Math.PI / 2;
 var SCORE_BRICK_DESTROY = 1;
 var SCORE_BALL_LOST = -5;
+var GAME_WAIT_SECONDS = 5;
 // Game States
 var STATE_WAIT_JOIN =       0;
 var STATE_WAIT_OPPONENT =   1;
@@ -536,12 +537,12 @@ function setup() {
 
             var now = (new Date()).getTime();
             state = STATE_WAIT_PLAY;
-            startTime = msg.start;
+            startTime = now + GAME_WAIT_SECONDS * 1000;
             setTimeout(function () {
                 state = STATE_PLAY;
                 //Initialize the game
                 initGame(msg.w, msg.h);
-            }, msg.start - now);
+            }, GAME_WAIT_SECONDS * 1000);
         } else {
             state = STATE_WAIT_OPPONENT;
         }

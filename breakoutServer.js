@@ -1,5 +1,4 @@
 var MAX_WIDTH = 700;
-var GAME_START_SECONDS = 5;
 
 var io;
 var socket;
@@ -108,7 +107,6 @@ function roomStatus(data) {
                     w: rooms[i].w,
                     h: rooms[i].h,
                     speed: rooms[i].speed,
-                    start: (new Date()).getTime() + GAME_START_SECONDS * 1000,
                 });
             }
         }
