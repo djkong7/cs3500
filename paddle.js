@@ -33,8 +33,7 @@ Paddle.prototype.draw = function(c) {
 
 /** Update the paddles position, and also prevents going off screen
  */
-Paddle.prototype.update = function() {
-
+Paddle.prototype.update = function(deltatime) {
     if (this.targetX != 0) {
         if (this.x > this.targetX) {
             this.vx = -PADDLE_SPEED;
@@ -47,8 +46,8 @@ Paddle.prototype.update = function() {
             this.vx = 0;
         }
     }
-    this.x += this.vx;
-    this.y += this.vy;
+    this.x += this.vx * deltatime;
+    this.y += this.vy * deltatime;
 
     if (this.x < 0 ) this.x = 0;
     if (this.x > canvas.gameWidth - this.width) this.x = canvas.gameWidth - this.width;

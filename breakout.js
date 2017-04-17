@@ -3,7 +3,7 @@ var BRICK_HEIGHT = 20;
 var BRICK_ROWS = 5;
 var PADDLE_WIDTH = 100;
 var PADDLE_HEIGHT = 15;
-var PADDLE_SPEED = 7;
+var PADDLE_SPEED = 14;
 var EDGE_COLOR = 'black';
 var KEY_SPACE = 32;
 var KEY_LEFT = 37;
@@ -21,6 +21,7 @@ var local_player = null;
 var other_player = null;
 var clickTimeout = null;
 var frame = 0;
+var lastTime = null;
 
 var roomId = 0;
 var roomSpeed = 0;
@@ -64,6 +65,15 @@ function drawCanvas(now) {
     var hitPlayerSide = false;
     var collidedBricks = [];
     var brickIndex = 0;
+    var deltatime = 1;
+
+    now /= 100;
+
+    if (lastTime != null) {
+        deltatime = now - lastTime;
+    }
+
+    lastTime = now;
 
     c.strokeStyle = 'gray';
     c.fillStyle = '#EEE';
@@ -86,6 +96,7 @@ function drawCanvas(now) {
         paddle = player.paddle;
 
         // TODO: Collide everything, update everything, then draw everything
+        // TODO: ACCOUNT FOR FRAMERATE
 
         // handle collisions
         balls.forEach(function (ball) {
@@ -122,7 +133,7 @@ function drawCanvas(now) {
                     });
                 }
             } else {
-                ball.update();
+                ball.update(deltatime);
                 ball.draw(c);
             }
 
@@ -149,7 +160,7 @@ function drawCanvas(now) {
 
         // draw paddles
         paddle.text = player.score;
-        paddle.update();
+        paddle.update(deltatime);
         paddle.draw(c);
     }
 

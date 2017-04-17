@@ -75,7 +75,7 @@ function roomJoin(data) {
     if (room.w > MAX_WIDTH) room.w = MAX_WIDTH;
 
     // update room speed
-    room.speed = Math.floor(room.h / 100);
+    room.speed = Math.floor(room.h / 50);
     if (room.speed < 1) room.speed = 1;
 
     //Send the roomid to only the new client

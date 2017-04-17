@@ -21,7 +21,7 @@ Ball.prototype.draw = function(c) {
 
 /** Update the ball's position
  */
-Ball.prototype.update = function() {
+Ball.prototype.update = function(deltatime) {
     if (this.attachedPaddle) {
         // stay near paddle
         var y = this.attachedPaddle.y - this.radius;
@@ -31,7 +31,7 @@ Ball.prototype.update = function() {
         this.x = this.attachedPaddle.x + this.attachedPaddle.width / 2;
         this.y = y;
     } else {
-        this.x += this.vx;
-        this.y += this.vy;
+        this.x += this.vx * deltatime;
+        this.y += this.vy * deltatime;
     }
 }
