@@ -16,10 +16,11 @@ var SCORE_BALL_LOST = -5;
 // Game States
 var STATE_WAIT_JOIN =       0;
 var STATE_WAIT_OPPONENT =   1;
-var STATE_PLAY =            2;
-var STATE_WON =             3;
-var STATE_LOST =            4;
-var STATE_DISCONNECTED =    5;
+var STATE_WAIT_PLAY =       2
+var STATE_PLAY =            3;
+var STATE_WON =             4;
+var STATE_LOST =            5;
+var STATE_DISCONNECTED =    6;
 
 var canvas = null;
 var c = null;
@@ -30,6 +31,7 @@ var clickTimeout = null;
 var frame = 0;
 var lastTime = null;
 var state = STATE_WAIT_JOIN;
+var startTime = null;
 
 var roomId = 0;
 var roomSpeed = 0;
@@ -209,6 +211,10 @@ function drawCanvas(now) {
             c.fillText('Waiting for an opponent', w / 2, h / 2);
         } else if (state == STATE_WAIT_JOIN) {
             c.fillText('Connecting to server', w / 2, h / 2);
+        } else if (state == STATE_WAIT_PLAY) {
+            var seconds = Math.ceil((startTime - (new Date()).getTime()) / 1000.0);
+            var plural = (seconds != 1) ? 's' : '';
+            c.fillText('Game starts in ' + seconds + ' second' + plural, w / 2, h / 2);
         } else if (state == STATE_WON) {
             c.fillText('You won!', w / 2, h / 2);
             c.font = '12px';
@@ -515,7 +521,6 @@ function setup() {
         disconnect = false;
 
         if (!only) {
-            state = STATE_PLAY;
             if (local_player.id == msg.player1Id) {
                 other_player.id = msg.player2Id;
                 local_player.ballIncrement = 1;
@@ -529,8 +534,14 @@ function setup() {
 
             roomSpeed = msg.speed;
 
-            //Initialize the game
-            initGame(msg.w, msg.h);
+            var now = (new Date()).getTime();
+            state = STATE_WAIT_PLAY;
+            startTime = msg.start;
+            setTimeout(function () {
+                state = STATE_PLAY;
+                //Initialize the game
+                initGame(msg.w, msg.h);
+            }, msg.start - now);
         } else {
             state = STATE_WAIT_OPPONENT;
         }
